@@ -50,7 +50,7 @@ function update_route53() {
 }
 EOF
 )
-
+    log "Updating Route53 record..."
     aws route53 change-resource-record-sets \
         --hosted-zone-id "$HOSTED_ZONE_ID" \
         --change-batch "$CHANGE_BATCH"
@@ -60,6 +60,36 @@ EOF
 
 function configure_wireguard() {
     log "Configuring Wireguard"
+
+    export TOKEN=$(curl -sS -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" )
+    export REGION=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+
+    PRIVATE_KEY_SSM_PARAM=${in_ssm_private_key}
+    PUBLIC_KEY_SSM_PARAM=${in_ssm_public_key}
+
+    log "Setting up private and public keys"
+    log "PRIVATE_KEY_SSM_PARAM=$PRIVATE_KEY_SSM_PARAM"
+    log "PUBLIC_KEY_SSM_PARAM=$PUBLIC_KEY_SSM_PARAM"
+    PRIVATE_KEY=$(aws ssm get-parameter \
+        --name "/$PRIVATE_KEY_SSM_PARAM" \
+        --with-decryption \
+        --region $REGION \
+        --query "Parameter.Value" \
+        --output text)
+
+    PUBLIC_KEY=$(aws ssm get-parameter \
+        --name "/$PUBLIC_KEY_SSM_PARAM" \
+        --with-decryption \
+        --region $REGION \
+        --query "Parameter.Value" \
+        --output text)
+
+    echo $PRIVATE_KEY > /etc/wireguard/privatekey
+    echo $PUBLIC_KEY > /etc/wireguard/publickey
+
+    chmod 700 /etc/wireguard/privatekey /etc/wireguard/publickey
+
+    log "Wireguard configuration finished"
 }
 
 log "Initializing all the configuration process..."

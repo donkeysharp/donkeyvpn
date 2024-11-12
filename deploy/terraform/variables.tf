@@ -49,3 +49,19 @@ variable "desired_capacity" {
   default = 0
 }
 
+variable "private_key_ssm_param" {
+  type = string
+  default = "donkeyvpn/privatekey"
+  description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
+}
+
+variable "public_key_ssm_param" {
+  type = string
+  default = "donkeyvpn/publickey"
+  description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
+}
+
+variable "kms_key_alias" {
+  type = string
+  default = "alias/aws/ssm"
+}

@@ -15,12 +15,19 @@ locals {
   asg_tags = merge({
     Name = local.prefix
   }, local.base_tags)
+
+  account_id = data.aws_caller_identity.current.account_id
+  region     = data.aws_region.current.name
 }
 
 terraform {
   backend "s3" {
   }
 }
+
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
 
 data "aws_ami" "debian" {
   most_recent = true
@@ -40,6 +47,10 @@ data "aws_ami" "debian" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
+}
+
+data "aws_kms_alias" "ssm" {
+  name = var.kms_key_alias
 }
 
 resource "aws_iam_role" "this" {
@@ -84,6 +95,25 @@ resource "aws_iam_policy" "vpn_permissions" {
         Effect   = "Allow"
         Resource = "arn:aws:route53:::hostedzone/${var.hosted_zone}"
       },
+      {
+        Action = [
+          "ssm:GetParameter"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/${var.private_key_ssm_param}",
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/${var.public_key_ssm_param}"
+        ]
+      },
+      {
+        Action = [
+          "kms:Decrypt"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          data.aws_kms_alias.ssm.target_key_arn
+        ]
+      }
     ]
   })
 }
@@ -162,6 +192,8 @@ resource "aws_launch_template" "default" {
     in_vpn_record_ttl  = "60",
     in_vpn_record_name = var.vpn_domain_name
     in_hosted_zone_id  = var.hosted_zone
+    in_ssm_private_key = var.private_key_ssm_param
+    in_ssm_public_key  = var.public_key_ssm_param
   }))
 
   vpc_security_group_ids = [aws_security_group.default.id]
