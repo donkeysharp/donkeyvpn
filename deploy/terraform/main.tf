@@ -101,8 +101,7 @@ resource "aws_iam_policy" "vpn_permissions" {
         ]
         Effect   = "Allow"
         Resource = [
-          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/${var.private_key_ssm_param}",
-          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/${var.public_key_ssm_param}"
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/*"
         ]
       },
       {
@@ -194,6 +193,7 @@ resource "aws_launch_template" "default" {
     in_hosted_zone_id  = var.hosted_zone
     in_ssm_private_key = var.private_key_ssm_param
     in_ssm_public_key  = var.public_key_ssm_param
+    in_ssm_peers       = var.peers_ssm_param
   }))
 
   vpc_security_group_ids = [aws_security_group.default.id]

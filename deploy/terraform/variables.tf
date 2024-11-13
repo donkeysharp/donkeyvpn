@@ -61,6 +61,12 @@ variable "public_key_ssm_param" {
   description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
 }
 
+variable "peers_ssm_param" {
+  type = string
+  default = "donkeyvpn/peers"
+  description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
+}
+
 variable "kms_key_alias" {
   type = string
   default = "alias/aws/ssm"
