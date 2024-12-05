@@ -25,11 +25,13 @@ type DonkeyVPNApplication struct {
 	e              *echo.Echo
 	webhookHandler *handler.WebhookHandler
 	vpnHandler     *handler.VPNHandler
+	peerHandler    *handler.PeerHandler
 }
 
 func (app *DonkeyVPNApplication) registerRoutes() {
 	app.e.POST("/telegram/donkeyvpn/webhook", app.webhookHandler.Handle)
 	app.e.POST("v1/api/vpn", app.vpnHandler.Handle)
+	app.e.GET("v1/api/peer", app.peerHandler.Handle)
 }
 
 func (app *DonkeyVPNApplication) Start() {
@@ -83,6 +85,10 @@ func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, e
 		vpnHandler: &handler.VPNHandler{
 			WebhookSecret:  cfg.WebhookSecret,
 			InstancesTable: instancesTable,
+		},
+		peerHandler: &handler.PeerHandler{
+			WebhookSecret: cfg.WebhookSecret,
+			PeersTable:    peersTable,
 		},
 	}, nil
 }
