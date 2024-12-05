@@ -7,6 +7,7 @@ locals {
   ec2_role_name = "${local.prefix}-ec2"
 
   dynamodb_peers_table_name = "${local.prefix}-peers"
+  dynamodb_instances_table_name = "${local.prefix}-instances"
 
   base_tags = {
     Project     = "donkeyvpn"
