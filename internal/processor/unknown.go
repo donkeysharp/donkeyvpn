@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"fmt"
+
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
@@ -17,7 +19,13 @@ type UnknowCommandProcessor struct {
 	ProcessorShared
 }
 
-func (p UnknowCommandProcessor) Process(args []string, update *telegram.Update) {
+func (p UnknowCommandProcessor) Process(args []string, update *telegram.Update) error {
 	log.Info("Processing unknown command")
-	p.Client.SendMessage("Sorry, invalid command", update.Message.Chat)
+	message := fmt.Sprintf("Sorry, invalid command\nUsage:\n%s", getUsage())
+	err := p.Client.SendMessage(message, update.Message.Chat)
+	if err != nil {
+		log.Error("UnknowCommandProcessor: Error while sending message to Telegram")
+		return err
+	}
+	return nil
 }

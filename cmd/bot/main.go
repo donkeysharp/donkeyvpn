@@ -12,11 +12,17 @@ import (
 func main() {
 	var telegramBotAPIToken string = os.Getenv("TELEGRAM_BOT_API_TOKEN")
 	var webhookSecret string = os.Getenv("WEBHOOK_SECRET")
+	var autoscalingGroupName string = os.Getenv("AUTOSCALING_GROUP_NAME")
+	var peersTableName string = os.Getenv("DYNAMODB_PEERS_TABLE_NAME")
+	var instancesTableName string = os.Getenv("DYNAMODB_INSTANCES_TABLE_NAME")
 
 	e := echo.New()
 	app, err := app.NewApplication(app.DonkeyVPNConfig{
-		TelegramBotAPIToken: telegramBotAPIToken,
-		WebhookSecret:       webhookSecret,
+		TelegramBotAPIToken:  telegramBotAPIToken,
+		WebhookSecret:        webhookSecret,
+		AutoscalingGroupName: autoscalingGroupName,
+		PeersTableName:       peersTableName,
+		InstancesTableName:   instancesTableName,
 	}, e)
 
 	if err != nil {

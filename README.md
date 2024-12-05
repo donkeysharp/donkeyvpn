@@ -20,3 +20,8 @@ payload.json
 ```sh
 $ curl -H 'content-type: application/json' -XPOST --data @payload.json -sS https://api.telegram.org/bot${TELEGRAM_BOT_API_TOKEN}/setWebhook
 ```
+
+
+## Resources
+- https://www.wireguard.com/quickstart/
+- https://dev.to/tangramvision/what-they-don-t-tell-you-about-setting-up-a-wireguard-vpn-1h2g

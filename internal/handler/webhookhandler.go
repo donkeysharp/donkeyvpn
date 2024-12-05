@@ -23,13 +23,6 @@ type WebhookHandler struct {
 	CommandService *service.CommandService
 }
 
-func NewWebhookHandler(webhookSecret string, commandService *service.CommandService) *WebhookHandler {
-	return &WebhookHandler{
-		WebhookSecret:  webhookSecret,
-		CommandService: commandService,
-	}
-}
-
 func (h *WebhookHandler) Handle(c echo.Context) error {
 	contentRaw, err := io.ReadAll(c.Request().Body)
 	if err != nil {
