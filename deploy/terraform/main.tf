@@ -124,11 +124,15 @@ resource "aws_launch_template" "default" {
 
   user_data = base64encode(templatefile("${path.module}/templates/userdata.tpl.sh", {
     in_vpn_record_ttl  = "60",
-    in_vpn_record_name = var.vpn_domain_name
+    in_domain_name     = var.vpn_domain_name
     in_hosted_zone_id  = var.hosted_zone
     in_ssm_private_key = var.private_key_ssm_param
     in_ssm_public_key  = var.public_key_ssm_param
-    in_ssm_peers       = var.peers_ssm_param
+
+    in_api_base_url    = "asd" # TODO: set http api endpoint
+    in_api_secret      = var.api_secret
+    in_use_route53     = var.hosted_zone != "" ? "true" : "false"
+    # in_ssm_peers       = var.peers_ssm_param
   }))
 
   vpc_security_group_ids = [aws_security_group.default.id]

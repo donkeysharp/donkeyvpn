@@ -4,14 +4,35 @@ function log() {
     echo "DonkeyVPN - $@"
 }
 
+function load_settings() {
+    export API_BASE_URL=${in_api_base_url}
+    export API_SECRET=${in_api_secret}
+    export PORT="51820"
+    export USE_ROUTE53=${in_use_route53}
+    export PUBLIC_IP=$(curl -sS -L ifconfig.me)
+}
+
+function configure_domain_name() {
+    log "Getting next id"
+    export NEXT_ID=$(curl -sS "$API_BASE_URL/v1/api/vpn/nextid" | jq '.nextId')
+    log "Next Id: $NEXT_ID"
+
+    if [[ $USE_ROUTE53 == "true" ]]; then
+        export DOMAIN_NAME="$NEXT_ID.${in_domain_name}"
+    else
+        export DOMAIN_NAME=$PUBLIC_IP
+    fi
+    log "Instance domain name: $DOMAIN_NAME"
+}
+
 function prepare_dependencies() {
-    log "DonkeyPreparing dependencies"
+    log "DonkeyVPN. Preparing dependencies"
 
     sudo apt update
     sudo apt install -y wireguard unzip jq
     pushd /opt
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
+        unzip -q awscliv2.zip
         sudo ./aws/install
     popd
 
@@ -19,11 +40,13 @@ function prepare_dependencies() {
 }
 
 function update_route53() {
+    if [[ $USE_ROUTE53 != "true" ]]; then
+        log "Skipping route53 registration. Disabled."
+        return 0
+    fi
     log "Updating DNS records"
 
     HOSTED_ZONE_ID="${in_hosted_zone_id}"
-    DOMAIN_NAME="${in_vpn_record_name}"
-    PUBLIC_IP=$(curl -sS -L ifconfig.me)
     TTL="${in_vpn_record_ttl}"
 
     log "HOSTED_ZONE=$HOSTED_ZONE_ID DOMAIN_NAME=$DOMAIN_NAME PUBLIC_IP=$PUBLIC_IP TTL=$TTL"
@@ -58,15 +81,36 @@ EOF
     log "Route53 update finished"
 }
 
+function configure_peers() {
+    log "Retrieving list of peers from API"
+    curl -sS -H "x-api-key: $API_SECRET" "$API_BASE_URL/v1/api/peer" -o /tmp/wireguard_peers.txt
+
+    log "Adding peers to wg0.conf"
+    for peer in $(cat /tmp/wireguard_peers.txt); do
+        PEER_IP_ADDRESS=$(echo $peer | cut -d',' -f1)
+        PEER_PUBLIC_KEY=$(echo $peer | cut -d',' -f2)
+        log "Adding peer: $PEER_IP_ADDRESS"
+        cat <<EOF >> /etc/wireguard/wg0.conf
+[Peer]
+PublicKey = $PEER_PUBLIC_KEY
+AllowedIPs = $PEER_IP_ADDRESS/32
+
+EOF
+    done
+}
+
 function configure_wireguard() {
     log "Configuring Wireguard"
+
+    log "Enabling ip_forward"
+    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+    sysctl -p
 
     export TOKEN=$(curl -sS -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" )
     export REGION=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
 
     PRIVATE_KEY_SSM_PARAM=${in_ssm_private_key}
     PUBLIC_KEY_SSM_PARAM=${in_ssm_public_key}
-    PEERS_SSM_PARAM=${in_ssm_peers}
 
     log "Setting up private and public keys"
     log "PRIVATE_KEY_SSM_PARAM=$PRIVATE_KEY_SSM_PARAM"
@@ -85,40 +129,19 @@ function configure_wireguard() {
         --query "Parameter.Value" \
         --output text)
 
-    aws ssm get-parameter \
-        --name "/$PEERS_SSM_PARAM" \
-        --with-decryption \
-        --region $REGION \
-        --query "Parameter.Value" \
-        --output text >> /tmp/wireguard_peers.txt
-
     echo $PRIVATE_KEY > /etc/wireguard/privatekey
     echo $PUBLIC_KEY > /etc/wireguard/publickey
 
-    log "Enabling ip_forward"
-    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-    sysctl -p
-
-    log "Wireguard configuration finished"
     cat <<EOF >> /etc/wireguard/wg0.conf
 [Interface]
 Address = 10.0.0.1/24
-ListenPort = 51820
+ListenPort = $PORT
 PrivateKey = $PRIVATE_KEY
 
 EOF
-    log "Adding peers to wg0.conf"
-    for peer in $(cat /tmp/wireguard_peers.txt); do
-        PEER_IP_ADDRESS=$(echo $peer | cut -d',' -f1)
-        PEER_PUBLIC_KEY=$(echo $peer | cut -d',' -f2)
-        echo "Adding peer: $PEER_IP_ADDRESS"
-        cat <<EOF >> /etc/wireguard/wg0.conf
-[Peer]
-PublicKey = $PEER_PUBLIC_KEY
-AllowedIPs = $PEER_IP_ADDRESS/32
+    log "Wireguard configuration finished"
 
-EOF
-    done
+    configure_peers
 
     chmod 700 /etc/wireguard/*
 
@@ -129,8 +152,18 @@ EOF
     systemctl enable wg-quick@wg0
 }
 
+function register_instance() {
+    log "Registering $DOMAIN_NAME via api"
+    result=$(curl -sS --data '{"domain": "$DOMAIN_NAME", "id": "$NEXT_ID", "port": $PORT }' -XPOST "$API_BASE_URL/v1/api/vpn")
+
+    log "Result: $result"
+}
+
 log "Initializing all the configuration process..."
 
 prepare_dependencies
-update_route53
+load_settings
+configure_domain_name
 configure_wireguard
+register_instance
+update_route53

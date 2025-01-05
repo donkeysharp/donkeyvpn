@@ -71,3 +71,8 @@ variable "kms_key_alias" {
   type = string
   default = "alias/aws/ssm"
 }
+
+variable "api_secret" {
+  type = string
+  description = "Secret value required by any webhook or api communication."
+}
