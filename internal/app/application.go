@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/handler"
@@ -23,6 +25,7 @@ type DonkeyVPNConfig struct {
 
 type DonkeyVPNApplication struct {
 	e              *echo.Echo
+	webhookSecret  string
 	webhookHandler *handler.WebhookHandler
 	vpnHandler     *handler.VPNHandler
 	peerHandler    *handler.PeerHandler
@@ -30,11 +33,27 @@ type DonkeyVPNApplication struct {
 
 func (app *DonkeyVPNApplication) registerRoutes() {
 	app.e.POST("/telegram/donkeyvpn/webhook", app.webhookHandler.Handle)
-	app.e.POST("v1/api/vpn", app.vpnHandler.Handle)
-	app.e.GET("v1/api/peer", app.peerHandler.Handle)
+	app.e.GET("v1/api/vpn/nextid", app.vpnHandler.NextId)
+	app.e.GET("v1/api/vpn/:vpnId", app.vpnHandler.Get)
+	app.e.POST("v1/api/vpn/notify/:vpnId", app.vpnHandler.Notify)
+
+	app.e.GET("v1/api/peer", app.peerHandler.List)
+}
+
+func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		requestToken := c.Request().Header.Get("x-api-key")
+		if strings.Compare(requestToken, app.webhookSecret) != 0 {
+			log.Warnf("received a missing or invalid webhook secret")
+			c.Response().Header().Add("content-type", "text/plain")
+			return c.JSON(http.StatusUnauthorized, "Invalid token, set the correct token in x-api-key header")
+		}
+		return next(c)
+	}
 }
 
 func (app *DonkeyVPNApplication) Start() {
+	app.e.Use(app.SecretBasedAuth)
 	app.registerRoutes()
 	app.e.Logger.Fatal(app.e.Start(":8080"))
 }
@@ -70,21 +89,24 @@ func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, e
 		return nil, err
 	}
 
-	svc := service.NewCommandService()
-	svc.Register("/create", processor.NewCreateProcessor(client, asg, peersTable))
-	svc.Register("/list", processor.NewListProcessor(client, peersTable, instancesTable))
-	svc.Register("/delete", processor.NewDeleteProcessor(client))
-	svc.RegisterFallback(processor.NewUnknowCommandProcessor(client))
+	vpnService := service.NewVPNService(asg, instancesTable)
+
+	cmdProcessor := processor.NewCommandProcessor()
+	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService))
+	cmdProcessor.Register("/list", processor.NewListProcessor(client, peersTable, instancesTable))
+	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client))
+	cmdProcessor.RegisterFallback(processor.NewUnknowCommandProcessor(client))
 
 	return &DonkeyVPNApplication{
-		e: e,
+		e:             e,
+		webhookSecret: cfg.WebhookSecret,
 		webhookHandler: &handler.WebhookHandler{
-			WebhookSecret:  cfg.WebhookSecret,
-			CommandService: svc,
+			WebhookSecret:    cfg.WebhookSecret,
+			CommandProcessor: cmdProcessor,
 		},
 		vpnHandler: &handler.VPNHandler{
-			WebhookSecret:  cfg.WebhookSecret,
-			InstancesTable: instancesTable,
+			WebhookSecret: cfg.WebhookSecret,
+			VPNSvc:        vpnService,
 		},
 		peerHandler: &handler.PeerHandler{
 			WebhookSecret: cfg.WebhookSecret,

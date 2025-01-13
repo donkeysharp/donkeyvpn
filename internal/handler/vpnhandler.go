@@ -1,69 +1,91 @@
 package handler
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
-	"strings"
 
-	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
+	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
 
+type JSONObj map[string]interface{}
+
 type VPNHandler struct {
-	WebhookSecret  string
-	InstancesTable *aws.DynamoDB
+	WebhookSecret string
+	VPNSvc        *service.VPNService
 }
 
-func (h *VPNHandler) Handle(c echo.Context) error {
-	contentRaw, err := io.ReadAll(c.Request().Body)
+type NotificationRequest struct {
+	Id       string
+	Hostname string `json:"hostname"`
+	Port     string `json:"port"`
+	Status   string `json:"status"`
+}
+
+func (r *NotificationRequest) ToModel() interface{} {
+	return models.VPNInstance{
+		Id:       r.Id,
+		Hostname: r.Hostname,
+		Port:     r.Port,
+		Status:   r.Status,
+	}
+}
+
+func (h *VPNHandler) NextId(c echo.Context) error {
+	nextId, err := h.VPNSvc.NextId()
 	if err != nil {
-		log.Error("could not load body reader")
-		return c.String(http.StatusAccepted, GenericErrorMessage)
+		log.Errorf("Could not get next id: %v", err.Error())
+		return c.String(http.StatusInternalServerError, GenericErrorMessage)
 	}
-
-	if len(contentRaw) == 0 {
-		contentRaw = []byte("Empty")
+	response := map[string]string{
+		"nextId": nextId,
 	}
-	c.Response().Header().Add("Content-type", "application/json")
-	content := string(contentRaw)
-	requestToken := c.Request().Header.Get("x-api-key")
-	if strings.Compare(requestToken, h.WebhookSecret) != 0 {
-		log.Error("received a missing or invalid webhook secret")
-		c.Response().Header().Add("content-type", "text/plain")
-		return c.String(http.StatusAccepted, GenericErrorMessage)
-	}
+	return c.JSON(http.StatusAccepted, response)
+}
 
-	log.Infof("Body content: %s", content)
-
-	var tmp interface{}
-	err = json.Unmarshal(contentRaw, &tmp)
+func (h *VPNHandler) Get(c echo.Context) error {
+	vpnId := c.Param("vpnId")
+	instance, err := h.VPNSvc.Get(vpnId)
 	if err != nil {
-		log.Error("error unmarshalling request body")
-		return c.String(http.StatusAccepted, GenericErrorMessage)
+		if err == service.ErrVPNInstanceNotFound {
+			return c.JSON(http.StatusNotFound, JSONObj{
+				"message": "VPN instance not found",
+			})
+		}
+		log.Errorf("Failed to retrieve VPN instance: %v", err.Error())
+		return c.JSON(http.StatusInternalServerError, JSONObj{
+			"message": GenericErrorMessage,
+		})
 	}
-	vpnInfo := tmp.(map[string]interface{})
-	hostname, ok := vpnInfo["hostname"].(string)
-	if !ok {
-		return c.String(http.StatusBadRequest, "hostname and publicIP fields are expected")
+	return c.JSON(http.StatusOK, instance)
+}
+
+func (h *VPNHandler) Notify(c echo.Context) error {
+	vpnId := c.Param("vpnId")
+
+	var req *NotificationRequest = new(NotificationRequest)
+	if err := c.Bind(&req); err != nil {
+		log.Errorf("Could not process %v", err.Error())
+		return c.JSON(http.StatusBadRequest, JSONObj{"error": GenericErrorMessage})
 	}
-	publicIP, ok := vpnInfo["publicIP"].(string)
-	if !ok {
-		return c.String(http.StatusBadRequest, "hostname and publicIP fields are expected")
-	}
-	instance := models.NewVPNInstance(hostname, publicIP)
-	created, err := h.InstancesTable.CreateRecord(instance)
+	req.Id = vpnId
+	log.Infof("Registering vpnId: %s hostname: %s status: %s", req.Id, req.Hostname, req.Status)
+	err := h.VPNSvc.Update(req.ToModel().(models.VPNInstance))
 	if err != nil {
-		log.Errorf("error registering instance %v", err)
-		return c.String(http.StatusInternalServerError, "Error registering the instance")
+		if err == service.ErrVPNInstanceNotFound {
+			return c.JSON(http.StatusNotFound, JSONObj{
+				"message": "VPN instance not found",
+			})
+		}
+		log.Errorf("Failed processing request: %v", err.Error())
+		return c.JSON(http.StatusInternalServerError, JSONObj{
+			"message": GenericErrorMessage,
+		})
 	}
 
-	if !created {
-		log.Error("The VPN Instance was not created")
-		return c.String(http.StatusInternalServerError, "The VPN instance was not created")
-	}
-
-	return c.String(http.StatusAccepted, "OK")
+	log.Infof("NotificationRequest: %v ", req)
+	return c.JSON(http.StatusAccepted, JSONObj{
+		"message": "VPN instance registered",
+	})
 }

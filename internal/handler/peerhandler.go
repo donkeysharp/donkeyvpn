@@ -15,7 +15,7 @@ type PeerHandler struct {
 	PeersTable    *aws.DynamoDB
 }
 
-func (p *PeerHandler) Handle(c echo.Context) error {
+func (p *PeerHandler) List(c echo.Context) error {
 	result, err := p.PeersTable.ListRecords()
 	if err != nil {
 		log.Errorf("error listing peers %v", err)

@@ -1,9 +1,8 @@
-package service
+package processor
 
 import (
 	"strings"
 
-	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
@@ -14,31 +13,35 @@ const (
 	UnknowCommand = "unknown"
 )
 
-func NewCommandService() *CommandService {
-	return &CommandService{
-		processors: make(map[Command]processor.Processor),
-		fallback:   processor.UnknowCommandProcessor{},
+func NewCommandProcessor() *CommandProcessor {
+	return &CommandProcessor{
+		processors: make(map[Command]Processor),
+		fallback:   UnknowCommandProcessor{},
 	}
 }
 
-type CommandService struct {
-	processors map[Command]processor.Processor
-	fallback   processor.Processor
+type CommandProcessor struct {
+	processors map[Command]Processor
+	fallback   Processor
 }
 
-func (p *CommandService) Register(command Command, processor processor.Processor) {
+func (p *CommandProcessor) Register(command Command, processor Processor) {
 	p.processors[command] = processor
 }
 
-func (p *CommandService) RegisterFallback(processor processor.Processor) {
+func (p *CommandProcessor) RegisterFallback(processor Processor) {
 	p.fallback = processor
 }
 
-func (p *CommandService) Process(update *telegram.Update) {
+func (p *CommandProcessor) Process(update *telegram.Update) {
 	command, args := parseCommand(update)
 	log.Infof("Processing command: %s with args: %v", command, args)
 	if processor, ok := p.processors[command]; ok {
-		processor.Process(args, update)
+		err := processor.Process(args, update)
+		if err != nil {
+			log.Warnf("%v failed to be processed, it will not interrupt execution", command)
+			log.Warnf("Error: %v", err)
+		}
 		return
 	}
 	p.fallback.Process(args, update)

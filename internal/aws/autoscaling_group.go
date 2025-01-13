@@ -36,6 +36,7 @@ func NewAutoscalingGroup(ctx context.Context, name string) (*AutoscalingGroup, e
 }
 
 func (a *AutoscalingGroup) GetInfo() (*types.AutoScalingGroup, error) {
+	log.Info("Getting information from autoscaling group")
 	res, err := a.client.DescribeAutoScalingGroups(a.ctx, &autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: []string{a.Name},
 	})
@@ -59,16 +60,9 @@ func (a *AutoscalingGroup) UpdateCapacity(desiredCapacity int32) error {
 		return err
 	}
 
-	if *asg.DesiredCapacity > desiredCapacity {
-		log.Errorf("No instances required as asg has %d instances", *asg.DesiredCapacity)
-		return errors.New("no need to update desired capacity")
-	}
-
 	log.Infof("Updating autoscaling gorup capacity to desired capacity: %d", desiredCapacity)
 	res, err := a.client.UpdateAutoScalingGroup(a.ctx, &autoscaling.UpdateAutoScalingGroupInput{
 		DesiredCapacity:      &desiredCapacity,
-		MaxSize:              &desiredCapacity,
-		MinSize:              &desiredCapacity,
 		AutoScalingGroupName: &a.Name,
 	})
 

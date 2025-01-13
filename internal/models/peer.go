@@ -27,12 +27,16 @@ func (p *WireguardPeer) ToItem() map[string]types.AttributeValue {
 		"PublicKey":   &types.AttributeValueMemberS{Value: p.PublicKey},
 	}
 }
-func (p *WireguardPeer) PrimaryKey() string {
-	return p.IPAddress
+func (p *WireguardPeer) PrimaryKey() map[string]types.AttributeValue {
+	return map[string]types.AttributeValue{
+		"IPAddress": &types.AttributeValueMemberS{Value: p.IPAddress},
+	}
 }
 
-func (p *WireguardPeer) RangeKey() string {
-	return p.PublicKey
+func (p *WireguardPeer) RangeKey() map[string]types.AttributeValue {
+	return map[string]types.AttributeValue{
+		"PublicKey": &types.AttributeValueMemberS{Value: p.PublicKey},
+	}
 }
 
 func DynamoItemsToWireguardPeers(items []map[string]types.AttributeValue) ([]WireguardPeer, error) {

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/donkeysharp/donkeyvpn/internal/service"
+	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
@@ -19,8 +19,8 @@ const (
 )
 
 type WebhookHandler struct {
-	WebhookSecret  string
-	CommandService *service.CommandService
+	WebhookSecret    string
+	CommandProcessor *processor.CommandProcessor
 }
 
 func (h *WebhookHandler) Handle(c echo.Context) error {
@@ -60,7 +60,7 @@ func (h *WebhookHandler) Handle(c echo.Context) error {
 
 	fmt.Printf("%+v\n", update)
 	log.Info("sending answer to message")
-	h.CommandService.Process(update)
+	h.CommandProcessor.Process(update)
 
 	return c.String(http.StatusOK, content)
 }

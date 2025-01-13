@@ -40,9 +40,11 @@ func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 
 	message := "List of instances:\n-----\n"
 	for _, item := range instances {
-		log.Infof("Proccessing instance: %s %s", item.Hostname, item.PublicIP)
+		log.Infof("Proccessing instance: %s %s %s %s", item.Id, item.Hostname, item.Port, item.Status)
+		message += fmt.Sprintf("Id: %s\n", item.Id)
 		message += fmt.Sprintf("Hostname: %s\n", item.Hostname)
-		message += fmt.Sprintf("Public IP: %s\n", item.PublicIP)
+		message += fmt.Sprintf("Port: %s\n", item.Port)
+		message += fmt.Sprintf("Status: %s\n", item.Status)
 		message += "-----\n"
 	}
 

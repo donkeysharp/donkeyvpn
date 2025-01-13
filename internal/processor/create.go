@@ -3,59 +3,57 @@ package processor
 import (
 	"fmt"
 
-	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
+	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
-func NewCreateProcessor(client *telegram.Client, asg *aws.AutoscalingGroup, table *aws.DynamoDB) CreateProcessor {
+func NewCreateProcessor(client *telegram.Client, vpnSvc *service.VPNService) CreateProcessor {
 	return CreateProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
-			asg:    asg,
-			table:  table,
 		},
+		vpnSvc: vpnSvc,
 	}
 }
 
 type CreateProcessor struct {
 	ProcessorShared
+	vpnSvc *service.VPNService
+}
+
+func (p CreateProcessor) sendMessage(msg string, update *telegram.Update) {
+	err2 := p.Client.SendMessage(msg, update.Message.Chat)
+	if err2 != nil {
+		log.Errorf("Error sending message to Telegram. msg=%s", msg)
+	}
 }
 
 func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
-	asg, err := p.asg.GetInfo()
+	result, err := p.vpnSvc.Create()
 	if err != nil {
-		log.Error("Error while getting ASG information")
-		return err
-	}
-	if *asg.DesiredCapacity > 0 {
-		log.Warnf("ASG already has %d instances", *asg.DesiredCapacity)
-		msg := "There is already an ephemeral VPN server configured, use /check command to verify"
-		err = p.Client.SendMessage(msg, update.Message.Chat)
-		if err != nil {
-			log.Errorf("Error sending message to Telegram. msg=%s", msg)
+		log.Error("VPN instance creation failed")
+		if err == service.ErrMaxCapacity {
+			msg := "Maximum capacity reached, cannot create more instances."
+			p.sendMessage(msg, update)
+			return err
+		} else {
+			log.Errorf("Error while creating vpn instance: %v", err.Error())
+			p.sendMessage("VPN instance creation failed", update)
+			return err
 		}
+	}
+
+	if !result {
+		log.Error("Although no error was raised, the result of instance creation is false")
+		p.sendMessage("VPN instance creation failed", update)
 		return nil
 	}
 
-	desiredCapacity := 1
-	err = p.asg.UpdateCapacity(int32(desiredCapacity))
-	if err != nil {
-		log.Errorf("Error while updating capacity of ASG to %d", desiredCapacity)
-		msg := "Sorry, there was an error while creating the ephemeral VPN server, try again"
-		err2 := p.Client.SendMessage(msg, update.Message.Chat)
-		if err2 != nil {
-			log.Errorf("Error sending message to Telegram. msg=%s", msg)
-		}
-		return err
-	}
 	msg := "Processing request... once the vpn server is ready, "
-	msg += "you will be notified or use the /check command to get available ephemeral VPNs."
-	err = p.Client.SendMessage(msg, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", msg)
-	}
+	msg += "you will be notified or use the /list vpn command to get available ephemeral VPNs."
+	p.sendMessage(msg, update)
 	return nil
 }
 
