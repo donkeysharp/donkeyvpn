@@ -3,41 +3,40 @@ package processor
 import (
 	"fmt"
 
-	"github.com/donkeysharp/donkeyvpn/internal/aws"
-	"github.com/donkeysharp/donkeyvpn/internal/models"
+	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
-func NewListProcessor(client *telegram.Client, peersTable, instancesTable *aws.DynamoDB) ListProcessor {
+func NewListProcessor(client *telegram.Client, vpnService *service.VPNService, peerService *service.PeerService) ListProcessor {
 	return ListProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
 		},
-		peersTable:     peersTable,
-		instancesTable: instancesTable,
+		vpnService:  vpnService,
+		peerService: peerService,
 	}
 }
 
 type ListProcessor struct {
 	ProcessorShared
-	peersTable     *aws.DynamoDB
-	instancesTable *aws.DynamoDB
+	vpnService  *service.VPNService
+	peerService *service.PeerService
+}
+
+func (p ListProcessor) sendMessage(msg string, update *telegram.Update) {
+	err := p.Client.SendMessage(msg, update.Message.Chat)
+	if err != nil {
+		log.Errorf("Error sending message to Telegram. msg=%s", msg)
+	}
 }
 
 func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 	log.Info("Listing vpn instances for telegram")
-	result, err := p.instancesTable.ListRecords()
+	instances, err := p.vpnService.ListArray()
 	if err != nil {
-		log.Errorf("Error listing vpn instances: %v", err)
-		return err
+		p.sendMessage("Error while retrieving VPN instances. Try again please.", update)
 	}
-	instances, err := models.DynamoItemsToVPNInstances(result)
-	if err != nil {
-		log.Errorf("Error converting dynamodb items to vpn instances: %v", err)
-		return err
-	}
-
 	message := "List of instances:\n-----\n"
 	for _, item := range instances {
 		log.Infof("Proccessing instance: %s %s %s %s", item.Id, item.Hostname, item.Port, item.Status)
@@ -48,23 +47,15 @@ func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 		message += "-----\n"
 	}
 
-	err = p.Client.SendMessage(message, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", message)
-	}
+	p.sendMessage(message, update)
 	return nil
 }
 
 func (p ListProcessor) ListPeers(update *telegram.Update) error {
-	log.Info("Listing peers for telegram")
-	result, err := p.peersTable.ListRecords()
+	log.Infof("Listing peers for telegram")
+	peers, err := p.peerService.List()
 	if err != nil {
-		log.Errorf("Error while listing peers: %v", err)
-		return err
-	}
-	peers, err := models.DynamoItemsToWireguardPeers(result)
-	if err != nil {
-		log.Errorf("Error converting dynamodb items to wireguard peers: %v", err)
+		p.sendMessage("Error while retrieving peers. Try again please.", update)
 		return err
 	}
 
@@ -73,13 +64,11 @@ func (p ListProcessor) ListPeers(update *telegram.Update) error {
 		log.Infof("Processing peer: %s", item.IPAddress)
 		message += fmt.Sprintf("IP Address: %s\n", item.IPAddress)
 		message += fmt.Sprintf("Public Key: %s\n", item.PublicKey)
+		message += fmt.Sprintf("Username: %s\n", item.Username)
 		message += "-----\n"
 	}
 
-	err = p.Client.SendMessage(message, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", message)
-	}
+	p.sendMessage(message, update)
 	return nil
 }
 

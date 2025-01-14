@@ -43,8 +43,12 @@ func (app *DonkeyVPNApplication) registerRoutes() {
 func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		requestToken := c.Request().Header.Get("x-api-key")
+		if requestToken == "" {
+			log.Warnf("x-api-key header is empty, testing with %f header", handler.TELEGRAM_WEBHOOK_SECRET_HEADER)
+			requestToken = c.Request().Header.Get(handler.TELEGRAM_WEBHOOK_SECRET_HEADER)
+		}
 		if strings.Compare(requestToken, app.webhookSecret) != 0 {
-			log.Warnf("received a missing or invalid webhook secret")
+			log.Warnf("received a missing or invalid webhook secret %v %v", requestToken, app.webhookSecret)
 			c.Response().Header().Add("content-type", "text/plain")
 			return c.JSON(http.StatusUnauthorized, "Invalid token, set the correct token in x-api-key header")
 		}
@@ -90,10 +94,11 @@ func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, e
 	}
 
 	vpnService := service.NewVPNService(asg, instancesTable)
+	peerService := service.NewWireguardPeerService(peersTable)
 
 	cmdProcessor := processor.NewCommandProcessor()
-	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService))
-	cmdProcessor.Register("/list", processor.NewListProcessor(client, peersTable, instancesTable))
+	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService, peerService))
+	cmdProcessor.Register("/list", processor.NewListProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client))
 	cmdProcessor.RegisterFallback(processor.NewUnknowCommandProcessor(client))
 

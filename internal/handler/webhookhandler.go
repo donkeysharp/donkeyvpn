@@ -37,7 +37,7 @@ func (h *WebhookHandler) Handle(c echo.Context) error {
 	content := string(contentRaw)
 	requestToken := c.Request().Header.Get(TELEGRAM_WEBHOOK_SECRET_HEADER)
 	if strings.Compare(requestToken, h.WebhookSecret) != 0 {
-		log.Error("received a missing or invalid webhook secret")
+		log.Errorf("received a missing or invalid webhook secret: %v %v", requestToken, h.WebhookSecret)
 		c.Response().Header().Add("content-type", "text/plain")
 		return c.String(http.StatusAccepted, GenericErrorMessage)
 	}

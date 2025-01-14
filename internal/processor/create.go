@@ -1,26 +1,26 @@
 package processor
 
 import (
-	"fmt"
-
 	"github.com/donkeysharp/donkeyvpn/internal/models"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
-func NewCreateProcessor(client *telegram.Client, vpnSvc *service.VPNService) CreateProcessor {
+func NewCreateProcessor(client *telegram.Client, vpnSvc *service.VPNService, peerSvc *service.PeerService) CreateProcessor {
 	return CreateProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
 		},
-		vpnSvc: vpnSvc,
+		peerSvc: peerSvc,
+		vpnSvc:  vpnSvc,
 	}
 }
 
 type CreateProcessor struct {
 	ProcessorShared
-	vpnSvc *service.VPNService
+	vpnSvc  *service.VPNService
+	peerSvc *service.PeerService
 }
 
 func (p CreateProcessor) sendMessage(msg string, update *telegram.Update) {
@@ -57,39 +57,27 @@ func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
 	return nil
 }
 
-func (p CreateProcessor) CreatePeer(ipAddress, publicKey string, update *telegram.Update) error {
-	var peer models.WireguardPeer = models.WireguardPeer{
+func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, update *telegram.Update) error {
+	var peer *models.WireguardPeer = &models.WireguardPeer{
 		IPAddress: ipAddress,
 		PublicKey: publicKey,
+		Username:  username,
 	}
-	created, err := p.table.CreateRecord(&peer)
+	created, err := p.peerSvc.Create(peer)
 	if err != nil {
-		log.Errorf("Error while adding wireguard peer %v", err)
-		message := "Error while adding Wireguard peer"
-		err2 := p.Client.SendMessage(message, update.Message.Chat)
-		if err2 != nil {
-			log.Errorf("Error sending message to Telegram. msg=%s", message)
-		}
-
+		log.Errorf("Failed to create wireguard peer %v", err.Error())
+		p.sendMessage("Error adding wireguard peer, please try again.", update)
 		return err
 	}
 
 	if !created {
-		message := "Wireguard peer could not be added."
-		log.Warn(message)
-		err := p.Client.SendMessage(message, update.Message.Chat)
-		if err != nil {
-			log.Errorf("Error sending message to Telegram. msg=%s", message)
-		}
-		return fmt.Errorf("error while creating Wireguard peer")
+		log.Warnf("Wireguard peer could not be added, result was 'false'")
+		p.sendMessage("Wireguard peer could not be added, please try again.", update)
 	}
 
-	message := "Wireguard peer added successfully."
-	log.Info(message)
-	err = p.Client.SendMessage(message, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", message)
-	}
+	log.Infof("Wireguard peer added successfully")
+	p.sendMessage("Wireguard peer added successfully", update)
+
 	return nil
 }
 
@@ -104,7 +92,8 @@ func (p CreateProcessor) Process(args []string, update *telegram.Update) error {
 	if len(args) >= 3 && args[0] == "peer" {
 		ipAddress := args[1]
 		publicKey := args[2]
-		return p.CreatePeer(ipAddress, publicKey, update)
+		username := update.Message.Chat.Username
+		return p.CreatePeer(ipAddress, publicKey, username, update)
 	}
 
 	err := p.Client.SendMessage(usage, update.Message.Chat)

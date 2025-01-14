@@ -9,22 +9,25 @@ import (
 )
 
 type WireguardPeer struct {
-	IPAddress string `dynamodbav:"PeerAddress"`
+	IPAddress string `dynamodbav:"IPAddress"`
 	PublicKey string `dynamodbav:"PublicKey"`
+	Username  string `dynamodbav:"Username"`
 }
 
-func NewWireguardPeer(ipAddress, publicKey string) *WireguardPeer {
+func NewWireguardPeer(ipAddress, publicKey, username string) *WireguardPeer {
 	return &WireguardPeer{
 		IPAddress: ipAddress,
 		PublicKey: publicKey,
+		Username:  username,
 	}
 }
 
 func (p *WireguardPeer) ToItem() map[string]types.AttributeValue {
-	log.Infof("Calling ToItem: PeerAddress %v PublicKey: %v", p.IPAddress, p.PublicKey)
+	log.Infof("Calling ToItem: IPAddress %v PublicKey: %v", p.IPAddress, p.PublicKey)
 	return map[string]types.AttributeValue{
-		"PeerAddress": &types.AttributeValueMemberS{Value: p.IPAddress},
-		"PublicKey":   &types.AttributeValueMemberS{Value: p.PublicKey},
+		"IPAddress": &types.AttributeValueMemberS{Value: p.IPAddress},
+		"PublicKey": &types.AttributeValueMemberS{Value: p.PublicKey},
+		"Username":  &types.AttributeValueMemberS{Value: p.Username},
 	}
 }
 func (p *WireguardPeer) PrimaryKey() map[string]types.AttributeValue {
