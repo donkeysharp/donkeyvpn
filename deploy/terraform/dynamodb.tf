@@ -2,16 +2,10 @@ resource "aws_dynamodb_table" "donkeyvpn_peers" {
   name           = local.dynamodb_peers_table_name
   billing_mode   = "PAY_PER_REQUEST"
 
-  hash_key       = "PeerAddress"
-  range_key      = "PublicKey"
+  hash_key       = "IPAddress"
 
   attribute {
-    name = "PeerAddress"
-    type = "S"
-  }
-
-  attribute {
-    name = "PublicKey"
+    name = "IPAddress"
     type = "S"
   }
 
@@ -29,16 +23,10 @@ resource "aws_dynamodb_table" "donkeyvpn_instances" {
   name           = local.dynamodb_instances_table_name
   billing_mode   = "PAY_PER_REQUEST"
 
-  hash_key       = "Hostname"
-  range_key      = "PublicIP"
+  hash_key       = "Id"
 
   attribute {
-    name = "Hostname"
-    type = "S"
-  }
-
-  attribute {
-    name = "PublicIP"
+    name = "Id"
     type = "S"
   }
 
