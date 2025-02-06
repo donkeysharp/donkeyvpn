@@ -1,8 +1,25 @@
 #!/bin/bash
+set -e
 
 function log() {
     echo "DonkeyVPN - $@"
 }
+
+function notify() {
+    status=$1
+    log "Sending notificatoin with status: $status"
+    result = $(curl -sS -H 'content-type: application/json' \
+        -H "x-api-key: $API_SECRET" \
+        --data "{\"hostname\": \"$DOMAIN_NAME\", \"status\": \"$status\" }" \
+        -XPOST "$API_BASE_URL/v1/api/vpn/$NEXT_ID")
+    log "result: $result"
+}
+
+function handle_error() {
+    log "Handling error, notifying failure"
+    notify "error"
+}
+trap 'handle_error' ERR
 
 function load_settings() {
     export API_BASE_URL=${in_api_base_url}
@@ -154,7 +171,10 @@ EOF
 
 function register_instance() {
     log "Registering $DOMAIN_NAME via api"
-    result=$(curl -sS --data '{"domain": "$DOMAIN_NAME", "id": "$NEXT_ID", "port": $PORT }' -XPOST "$API_BASE_URL/v1/api/vpn")
+    result=$(curl -sS -H 'content-type: application/json' \
+        -H "x-api-key: $API_SECRET" \
+        --data "{\"domain\": \"$DOMAIN_NAME\", \"id\": \"$NEXT_ID\", \"port\": \"$PORT\" }" \
+        -XPOST "$API_BASE_URL/v1/api/vpn")
 
     log "Result: $result"
 }
@@ -167,3 +187,4 @@ configure_domain_name
 configure_wireguard
 register_instance
 update_route53
+notify "success"
