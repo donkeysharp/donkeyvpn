@@ -36,7 +36,7 @@ variable "subnets" {
 
 variable "max_size" {
   type = number
-  default = 0
+  default = 5
 }
 
 variable "min_size" {
