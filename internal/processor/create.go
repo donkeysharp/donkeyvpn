@@ -66,6 +66,10 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 	created, err := p.peerSvc.Create(peer)
 	if err != nil {
 		log.Errorf("Failed to create wireguard peer %v", err.Error())
+		if err == service.ErrInvalidWireguardKey {
+			p.sendMessage("Invalid wireguard key format, please use a valid key and try again.", update)
+			return err
+		}
 		p.sendMessage("Error adding wireguard peer, please try again.", update)
 		return err
 	}

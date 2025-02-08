@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
@@ -9,6 +10,7 @@ import (
 )
 
 var ErrFailedToCreateWireguardPeer = fmt.Errorf("failed to create wireguard peer")
+var ErrInvalidWireguardKey = fmt.Errorf("invalid wireguard key format")
 
 func NewWireguardPeerService(table *aws.DynamoDB) *PeerService {
 	return &PeerService{
@@ -16,11 +18,20 @@ func NewWireguardPeerService(table *aws.DynamoDB) *PeerService {
 	}
 }
 
+func isValidKey(key string) bool {
+	decodedKey, err := base64.StdEncoding.DecodeString(key)
+	return err != nil && len(decodedKey) == 32
+}
+
 type PeerService struct {
 	table *aws.DynamoDB
 }
 
 func (s *PeerService) Create(item *models.WireguardPeer) (bool, error) {
+	if !isValidKey(item.PublicKey) {
+		return false, ErrInvalidWireguardKey
+	}
+
 	created, err := s.table.CreateRecord(item)
 	if err != nil {
 		log.Errorf("Failed to create wireguard peer %v", err.Error())
