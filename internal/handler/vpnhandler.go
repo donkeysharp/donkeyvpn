@@ -17,18 +17,20 @@ type VPNHandler struct {
 }
 
 type NotificationRequest struct {
-	Id       string
-	Hostname string `json:"hostname"`
-	Port     string `json:"port"`
-	Status   string `json:"status"`
+	Id         string
+	Hostname   string `json:"hostname"`
+	Port       string `json:"port"`
+	Status     string `json:"status"`
+	InstanceId string `json:"instanceId"`
 }
 
 func (r *NotificationRequest) ToModel() interface{} {
 	return models.VPNInstance{
-		Id:       r.Id,
-		Hostname: r.Hostname,
-		Port:     r.Port,
-		Status:   r.Status,
+		Id:         r.Id,
+		Hostname:   r.Hostname,
+		Port:       r.Port,
+		Status:     r.Status,
+		InstanceId: r.InstanceId,
 	}
 }
 

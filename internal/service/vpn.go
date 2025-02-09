@@ -11,6 +11,7 @@ import (
 const STATUS_PENDING = "pending"
 const STATUS_READY = "ready"
 const MAX_INSTANCEs = 5
+const UNDEFINED = "undefined"
 
 func NewVPNService(asg *aws.AutoscalingGroup, table *aws.DynamoDB) *VPNService {
 	return &VPNService{
@@ -65,7 +66,12 @@ func (s *VPNService) Update(item models.VPNInstance) error {
 		return ErrVPNInstanceNotFound
 	}
 
-	return s.table.UpdateRecord(item)
+	instance.Hostname = item.Hostname
+	instance.Port = item.Port
+	instance.Status = item.Status
+	instance.InstanceId = item.InstanceId
+
+	return s.table.UpdateRecord(instance)
 }
 
 func (s *VPNService) Create() (bool, error) {
@@ -93,7 +99,7 @@ func (s *VPNService) Create() (bool, error) {
 		return false, err
 	}
 
-	instance := models.NewVPNInstance(nextId, "None", "", STATUS_PENDING)
+	instance := models.NewVPNInstance(nextId, UNDEFINED, UNDEFINED, STATUS_PENDING, UNDEFINED)
 	log.Infof("Creating a new record for id: %s", nextId)
 	result, err := s.table.CreateRecord(instance)
 	if err != nil {
