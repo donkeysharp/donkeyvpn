@@ -112,10 +112,10 @@ func (d *DynamoDB) ListRecords() ([]map[string]types.AttributeValue, error) {
 func (d *DynamoDB) DeleteRecord(item DynamoDBItem) error {
 	_, err := d.client.DeleteItem(d.ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(d.TableName),
-		Key:       item.ToItem(),
+		Key:       item.PrimaryKey(),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete peer: %w", err)
+		return fmt.Errorf("failed to delete item: %w", err)
 	}
 	return nil
 }

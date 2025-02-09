@@ -50,3 +50,12 @@ func DynamoItemsToWireguardPeers(items []map[string]types.AttributeValue) ([]Wir
 	}
 	return peers, nil
 }
+
+func DynamoItemToWireguardPeer(item map[string]types.AttributeValue) (*WireguardPeer, error) {
+	var peer WireguardPeer
+	err := attributevalue.UnmarshalMap(item, &peer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal instance: %v", err.Error())
+	}
+	return &peer, nil
+}

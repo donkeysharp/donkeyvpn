@@ -155,6 +155,17 @@ func (s *VPNService) ListMap() (map[string]models.VPNInstance, error) {
 	return instances, nil
 }
 
-func (s *VPNService) Delete() {
-
+func (s *VPNService) Delete(vpnId string) (bool, error) {
+	instance, err := s.Get(vpnId)
+	if err != nil {
+		return false, err
+	}
+	// TODO: delete in ASG as well
+	err = s.table.DeleteRecord(instance)
+	if err != nil {
+		log.Errorf("Failed to delete vpn instance %v. Error: %v", instance, err.Error())
+		return false, err
+	}
+	log.Infof("Instance with id %v deleted successfully", vpnId)
+	return true, nil
 }

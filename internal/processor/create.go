@@ -92,7 +92,6 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 func (p CreateProcessor) Process(args []string, update *telegram.Update) error {
 	log.Infof("Processing '/create' command with args %v for chat %d", args, update.Message.Chat.ChatId)
 
-	usage := getUsage()
 	if len(args) >= 1 && args[0] == "vpn" {
 		return p.CreateVPN(update)
 	}
@@ -104,6 +103,7 @@ func (p CreateProcessor) Process(args []string, update *telegram.Update) error {
 		return p.CreatePeer(ipAddress, publicKey, username, update)
 	}
 
+	usage := getUsage()
 	err := p.Client.SendMessage(usage, update.Message.Chat)
 	if err != nil {
 		log.Errorf("Error sending message to Telegram. msg=%s", usage)

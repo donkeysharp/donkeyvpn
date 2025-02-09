@@ -99,7 +99,7 @@ func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, e
 	cmdProcessor := processor.NewCommandProcessor()
 	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/list", processor.NewListProcessor(client, vpnService, peerService))
-	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client))
+	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client, vpnService, peerService))
 	cmdProcessor.RegisterFallback(processor.NewUnknowCommandProcessor(client))
 
 	return &DonkeyVPNApplication{
