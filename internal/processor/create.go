@@ -70,6 +70,10 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 			p.sendMessage("Invalid wireguard key format, please use a valid key and try again.", update)
 			return err
 		}
+		if err == service.ErrInvalidIPAddress {
+			p.sendMessage("Invalid IP address, it must be in the 10.0.0.0/24 range", update)
+			return err
+		}
 		p.sendMessage("Error adding wireguard peer, please try again.", update)
 		return err
 	}

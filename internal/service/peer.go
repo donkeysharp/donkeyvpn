@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/base64"
 	"fmt"
+	"net"
 
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
@@ -11,6 +12,7 @@ import (
 
 var ErrFailedToCreateWireguardPeer = fmt.Errorf("failed to create wireguard peer")
 var ErrInvalidWireguardKey = fmt.Errorf("invalid wireguard key format")
+var ErrInvalidIPAddress = fmt.Errorf("invalid IP address it must be in 10.0.0.0/24 range")
 
 func NewWireguardPeerService(table *aws.DynamoDB) *PeerService {
 	return &PeerService{
@@ -23,6 +25,14 @@ func isValidKey(key string) bool {
 	return err == nil && len(decodedKey) == 32
 }
 
+func isValidIPAddress(ipAddress string) bool {
+	_, cidrNet, err := net.ParseCIDR("10.0.0.0/24")
+	if err != nil {
+		return false
+	}
+	return cidrNet.Contains(net.ParseIP(ipAddress))
+}
+
 type PeerService struct {
 	table *aws.DynamoDB
 }
@@ -30,6 +40,10 @@ type PeerService struct {
 func (s *PeerService) Create(item *models.WireguardPeer) (bool, error) {
 	if !isValidKey(item.PublicKey) {
 		return false, ErrInvalidWireguardKey
+	}
+
+	if !isValidIPAddress(item.IPAddress) {
+		return false, ErrInvalidIPAddress
 	}
 
 	created, err := s.table.CreateRecord(item)
