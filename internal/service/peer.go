@@ -20,7 +20,7 @@ func NewWireguardPeerService(table *aws.DynamoDB) *PeerService {
 
 func isValidKey(key string) bool {
 	decodedKey, err := base64.StdEncoding.DecodeString(key)
-	return err != nil && len(decodedKey) == 32
+	return err == nil && len(decodedKey) == 32
 }
 
 type PeerService struct {
