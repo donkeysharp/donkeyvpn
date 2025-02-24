@@ -22,6 +22,10 @@ func NewWireguardPeer(ipAddress, publicKey, username string) *WireguardPeer {
 	}
 }
 
+func (p WireguardPeer) String() string {
+	return fmt.Sprintf("WireguardPeer - IPAddress: %v, PublicKey: %v, Username: %v", p.IPAddress, p.PublicKey, p.Username)
+}
+
 func (p *WireguardPeer) ToItem() map[string]types.AttributeValue {
 	log.Infof("Calling ToItem: IPAddress %v PublicKey: %v", p.IPAddress, p.PublicKey)
 	return map[string]types.AttributeValue{

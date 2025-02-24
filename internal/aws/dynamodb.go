@@ -22,6 +22,7 @@ type DynamoDBItem interface {
 	ToItem() map[string]types.AttributeValue
 	PrimaryKey() map[string]types.AttributeValue
 	RangeKey() map[string]types.AttributeValue
+	String() string
 }
 
 type DynamoDBFilter struct {
@@ -127,6 +128,7 @@ func (d *DynamoDB) ListRecordsWithFilters(filter *DynamoDBFilter) ([]map[string]
 }
 
 func (d *DynamoDB) DeleteRecord(item DynamoDBItem) error {
+	log.Infof("Deleting dynamodb record: %v", item)
 	_, err := d.client.DeleteItem(d.ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(d.TableName),
 		Key:       item.PrimaryKey(),
@@ -134,5 +136,6 @@ func (d *DynamoDB) DeleteRecord(item DynamoDBItem) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
+	log.Infof("Dynamodb record with id: %v deleted successfully", item.PrimaryKey())
 	return nil
 }

@@ -39,7 +39,7 @@ func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
 			p.sendMessage(msg, update)
 			return err
 		} else if err == service.ErrVPNInstanceCreating {
-			msg := "There is an instance that currently being created."
+			msg := "There is an instance that currently is being created."
 			msg += " Wait for it to finish before creating a new one."
 			p.sendMessage(msg, update)
 			return err

@@ -154,6 +154,7 @@ func (s *VPNService) ListPending() ([]models.VPNInstance, error) {
 }
 
 func (s *VPNService) Get(id string) (*models.VPNInstance, error) {
+	log.Infof("Getting VPN instance by id: %v", id)
 	item, err := s.table.GetRecord(models.VPNInstance{Id: id})
 
 	if err != nil {
@@ -169,6 +170,7 @@ func (s *VPNService) Get(id string) (*models.VPNInstance, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("VPN instance found: %v", instance)
 	return instance, nil
 }
 
@@ -190,11 +192,12 @@ func (s *VPNService) Delete(vpnId string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// err = s.asg.DeleteInstance(instance.InstanceId)
-	// if err != nil {
-	// 	log.Errorf("Failed to delete instance from ASG: %v", err.Error())
-	// 	return false, err
-	// }
+
+	err = s.asg.DeleteInstance(instance.InstanceId)
+	if err != nil {
+		log.Errorf("Failed to delete instance from ASG: %v", err.Error())
+		return false, err
+	}
 
 	err = s.table.DeleteRecord(instance)
 	if err != nil {

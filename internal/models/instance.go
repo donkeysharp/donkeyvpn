@@ -53,7 +53,7 @@ func (i VPNInstance) ToItem() map[string]types.AttributeValue {
 	}
 }
 func (i VPNInstance) PrimaryKey() map[string]types.AttributeValue {
-	log.Infof("VPN Instance Primary Key: %v", i.Id)
+	log.Debugf("VPN Instance Primary Key: %v", i.Id)
 	return map[string]types.AttributeValue{
 		"Id": &types.AttributeValueMemberS{Value: i.Id},
 	}

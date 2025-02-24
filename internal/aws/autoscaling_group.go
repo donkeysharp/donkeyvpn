@@ -76,31 +76,16 @@ func (a *AutoscalingGroup) UpdateCapacity(desiredCapacity int32) error {
 }
 
 func (a *AutoscalingGroup) DeleteInstance(instanceId string) error {
-	output, err := a.client.DetachInstances(a.ctx, &autoscaling.DetachInstancesInput{
+	log.Infof("Detaching instance: %v from autoscaling group", instanceId)
+	output, err := a.client.TerminateInstanceInAutoScalingGroup(a.ctx, &autoscaling.TerminateInstanceInAutoScalingGroupInput{
+		InstanceId:                     &instanceId,
 		ShouldDecrementDesiredCapacity: aws.Bool(true),
-		InstanceIds:                    []string{instanceId},
-		AutoScalingGroupName:           &a.Name,
 	})
 	if err != nil {
-		log.Errorf("Failed to detach instance id: %v. Error: %v", instanceId, err.Error())
+		log.Errorf("Failed to detach and terminate instance id: %v. Error: %v", instanceId, err.Error())
 		return err
 	}
+	log.Infof("Detaching instance %v finished successfully", instanceId)
 	log.Infof("Detach instance result: %v", output)
 	return nil
 }
-
-// func (a *AutoscalingGroup) GetIntances() error {
-// 	asg, err := a.GetInfo()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if len(asg.Instances) > 0 {
-
-// 	}
-// 	/*asg.Instances[0].InstanceId
-// 	for all instances get the instance from instance_id
-// 	*/
-// 	return nil
-
-// }
