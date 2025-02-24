@@ -8,10 +8,12 @@ function log() {
 function notify() {
     status=$1
     log "Sending notificatoin with status: $status"
-    result = $(curl -sS -H 'content-type: application/json' \
+    BODY="{\"hostname\": \"$DOMAIN_NAME\", \"status\": \"$status\", \"instanceId\": \"$INSTANCE_ID\", \"port\": \"$PORT\" }"
+    log "Notification body: $BODY"
+    result=$(curl -sS -H 'content-type: application/json' \
         -H "x-api-key: $API_SECRET" \
-        --data "{\"hostname\": \"$DOMAIN_NAME\", \"status\": \"$status\" }" \
-        -XPOST "$API_BASE_URL/v1/api/vpn/$NEXT_ID")
+        --data "$BODY" \
+        -XPOST "$API_BASE_URL/v1/api/vpn/notify/$VPN_INSTANCE_ID")
     log "result: $result"
 }
 
@@ -27,15 +29,18 @@ function load_settings() {
     export PORT="51820"
     export USE_ROUTE53=${in_use_route53}
     export PUBLIC_IP=$(curl -sS -L ifconfig.me)
+    export TOKEN=$(curl -sS -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" )
+    export REGION=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+    export INSTANCE_ID=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
 }
 
 function configure_domain_name() {
     log "Getting next id"
-    export NEXT_ID=$(curl -sS "$API_BASE_URL/v1/api/vpn/nextid" | jq '.nextId')
-    log "Next Id: $NEXT_ID"
+    export VPN_INSTANCE_ID=$(curl -sS -H "x-api-key: $API_SECRET" "$API_BASE_URL/v1/api/vpn/pending" | jq -r '.[0].Id')
+    log "VPN_INSTANCE_ID: $VPN_INSTANCE_ID"
 
     if [[ $USE_ROUTE53 == "true" ]]; then
-        export DOMAIN_NAME="$NEXT_ID.${in_domain_name}"
+        export DOMAIN_NAME="$VPN_INSTANCE_ID.${in_domain_name}"
     else
         export DOMAIN_NAME=$PUBLIC_IP
     fi
@@ -123,9 +128,6 @@ function configure_wireguard() {
     echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
     sysctl -p
 
-    export TOKEN=$(curl -sS -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" )
-    export REGION=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
-
     PRIVATE_KEY_SSM_PARAM=${in_ssm_private_key}
     PUBLIC_KEY_SSM_PARAM=${in_ssm_public_key}
 
@@ -169,15 +171,15 @@ EOF
     systemctl enable wg-quick@wg0
 }
 
-function register_instance() {
-    log "Registering $DOMAIN_NAME via api"
-    result=$(curl -sS -H 'content-type: application/json' \
-        -H "x-api-key: $API_SECRET" \
-        --data "{\"domain\": \"$DOMAIN_NAME\", \"id\": \"$NEXT_ID\", \"port\": \"$PORT\" }" \
-        -XPOST "$API_BASE_URL/v1/api/vpn")
+# function register_instance() {
+#     log "Registering $DOMAIN_NAME via api"
+#     result=$(curl -sS -H 'content-type: application/json' \
+#         -H "x-api-key: $API_SECRET" \
+#         --data "{\"hostname\": \"$DOMAIN_NAME\", \"id\": \"$VPN_INSTANCE_ID\", \"port\": \"$PORT\" }" \
+#         -XPOST "$API_BASE_URL/v1/api/vpn")
 
-    log "Result: $result"
-}
+#     log "Result: $result"
+# }
 
 log "Initializing all the configuration process..."
 
@@ -185,6 +187,5 @@ prepare_dependencies
 load_settings
 configure_domain_name
 configure_wireguard
-register_instance
 update_route53
 notify "success"

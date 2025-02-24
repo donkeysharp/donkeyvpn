@@ -24,6 +24,12 @@ type DynamoDBItem interface {
 	RangeKey() map[string]types.AttributeValue
 }
 
+type DynamoDBFilter struct {
+	FilterExpression *string
+	AttributeNames   map[string]string
+	AttributeValues  map[string]types.AttributeValue
+}
+
 type UpdateItem interface {
 	DynamoDBItem
 	UpdateExpression() (*expression.Expression, error)
@@ -96,10 +102,21 @@ func (d *DynamoDB) GetRecord(item DynamoDBItem) (map[string]types.AttributeValue
 }
 
 func (d *DynamoDB) ListRecords() ([]map[string]types.AttributeValue, error) {
+	return d.ListRecordsWithFilters(nil)
+}
+
+func (d *DynamoDB) ListRecordsWithFilters(filter *DynamoDBFilter) ([]map[string]types.AttributeValue, error) {
 	log.Info("Listing DynamoDB records")
-	output, err := d.client.Scan(d.ctx, &dynamodb.ScanInput{
+	input := &dynamodb.ScanInput{
 		TableName: aws.String(d.TableName),
-	})
+	}
+	if filter != nil {
+		input.FilterExpression = filter.FilterExpression
+		input.ExpressionAttributeNames = filter.AttributeNames
+		input.ExpressionAttributeValues = filter.AttributeValues
+	}
+
+	output, err := d.client.Scan(d.ctx, input)
 	if err != nil {
 		log.Errorf("Error listing records: %v", err)
 		return nil, fmt.Errorf("failed to list peers: %w", err)

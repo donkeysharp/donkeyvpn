@@ -5,13 +5,13 @@ import (
 
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
+	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
 const STATUS_PENDING = "pending"
 const STATUS_READY = "ready"
 const MAX_INSTANCEs = 5
-const UNDEFINED = "undefined"
 
 func NewVPNService(asg *aws.AutoscalingGroup, table *aws.DynamoDB) *VPNService {
 	return &VPNService{
@@ -27,6 +27,7 @@ type VPNService struct {
 
 var ErrMaxCapacity = fmt.Errorf("ASG reached its maximum of instances")
 var ErrVPNInstanceNotFound = fmt.Errorf("VPN Instance does not exist")
+var ErrVPNInstanceCreating = fmt.Errorf("VPN Instance is being created")
 
 func allPossibleIds() []string {
 	var possibleIds []string = make([]string, 0)
@@ -51,19 +52,20 @@ func (s *VPNService) NextId() (string, error) {
 	return "", ErrMaxCapacity
 }
 
-func (s *VPNService) UpdateMapper(item models.ModelMapper) error {
+func (s *VPNService) UpdateMapper(item models.ModelMapper) (*models.VPNInstance, error) {
 	model := item.ToModel().(models.VPNInstance)
 	return s.Update(model)
 }
 
-func (s *VPNService) Update(item models.VPNInstance) error {
+func (s *VPNService) Update(item models.VPNInstance) (*models.VPNInstance, error) {
+	log.Infof("Updating instance with the next values: %v", item)
 	instance, err := s.Get(item.Id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if instance == nil {
-		return ErrVPNInstanceNotFound
+		return nil, ErrVPNInstanceNotFound
 	}
 
 	instance.Hostname = item.Hostname
@@ -71,10 +73,24 @@ func (s *VPNService) Update(item models.VPNInstance) error {
 	instance.Status = item.Status
 	instance.InstanceId = item.InstanceId
 
-	return s.table.UpdateRecord(instance)
+	err = s.table.UpdateRecord(instance)
+	if err != nil {
+		return nil, err
+	}
+	return instance, nil
 }
 
-func (s *VPNService) Create() (bool, error) {
+func (s *VPNService) Create(telegramChatId telegram.ChatId) (bool, error) {
+	instances, err := s.ListPending()
+	if err != nil {
+		log.Errorf("Error retrieving pending instances")
+		return false, err
+	}
+	if len(instances) > 0 {
+		log.Warnf("There is one instance being created.")
+		return false, ErrVPNInstanceCreating
+	}
+
 	asg, err := s.asg.GetInfo()
 	if err != nil {
 		log.Error("Error while getting ASG information")
@@ -98,8 +114,8 @@ func (s *VPNService) Create() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
-	instance := models.NewVPNInstance(nextId, UNDEFINED, UNDEFINED, STATUS_PENDING, UNDEFINED)
+	var chatId string = fmt.Sprintf("%v", telegramChatId)
+	instance := models.NewVPNInstance(nextId, STATUS_PENDING, STATUS_PENDING, STATUS_PENDING, STATUS_PENDING, chatId)
 	log.Infof("Creating a new record for id: %s", nextId)
 	result, err := s.table.CreateRecord(instance)
 	if err != nil {
@@ -112,6 +128,20 @@ func (s *VPNService) Create() (bool, error) {
 
 func (s *VPNService) ListArray() ([]models.VPNInstance, error) {
 	itemsRaw, err := s.table.ListRecords()
+	if err != nil {
+		return nil, err
+	}
+
+	instances, err := models.DynamoItemsToVPNInstances(itemsRaw)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}
+
+func (s *VPNService) ListPending() ([]models.VPNInstance, error) {
+	filter := models.FilterInstanceByStatus(STATUS_PENDING)
+	itemsRaw, err := s.table.ListRecordsWithFilters(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +190,12 @@ func (s *VPNService) Delete(vpnId string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// TODO: delete in ASG as well
+	// err = s.asg.DeleteInstance(instance.InstanceId)
+	// if err != nil {
+	// 	log.Errorf("Failed to delete instance from ASG: %v", err.Error())
+	// 	return false, err
+	// }
+
 	err = s.table.DeleteRecord(instance)
 	if err != nil {
 		log.Errorf("Failed to delete vpn instance %v. Error: %v", instance, err.Error())

@@ -129,7 +129,7 @@ resource "aws_launch_template" "default" {
     in_ssm_private_key = var.private_key_ssm_param
     in_ssm_public_key  = var.public_key_ssm_param
 
-    in_api_base_url    = "asd" # TODO: set http api endpoint
+    in_api_base_url    = "https://glorious-supposedly-lark.ngrok-free.app" # TODO: set http api endpoint
     in_api_secret      = var.api_secret
     in_use_route53     = var.hosted_zone != "" ? "true" : "false"
     # in_ssm_peers       = var.peers_ssm_param
@@ -146,6 +146,8 @@ resource "aws_autoscaling_group" "default" {
   health_check_grace_period = 300
   health_check_type         = "ELB"
   force_delete              = true
+  termination_policies      = ["OldestInstance"]
+
   launch_template {
     id      = aws_launch_template.default.id
     version = "$Latest"

@@ -39,12 +39,16 @@ func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 	}
 	message := "List of instances:\n-----\n"
 	for _, item := range instances {
-		log.Infof("Proccessing instance: %s %s %s %s", item.Id, item.Hostname, item.Port, item.Status)
+		log.Infof("Proccessing instance: %v", item)
 		message += fmt.Sprintf("Id: %s\n", item.Id)
 		message += fmt.Sprintf("Hostname: %s\n", item.Hostname)
 		message += fmt.Sprintf("Port: %s\n", item.Port)
 		message += fmt.Sprintf("Status: %s\n", item.Status)
 		message += "-----\n"
+	}
+
+	if len(instances) == 0 {
+		message = "No VPN instances available"
 	}
 
 	p.sendMessage(message, update)
@@ -68,6 +72,9 @@ func (p ListProcessor) ListPeers(update *telegram.Update) error {
 		message += "-----\n"
 	}
 
+	if len(peers) == 0 {
+		message = "No peers available"
+	}
 	p.sendMessage(message, update)
 	return nil
 }

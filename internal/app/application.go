@@ -32,10 +32,15 @@ type DonkeyVPNApplication struct {
 }
 
 func (app *DonkeyVPNApplication) registerRoutes() {
+	// Telegram bot will send all messages to this endpoint
 	app.e.POST("/telegram/donkeyvpn/webhook", app.webhookHandler.Handle)
-	app.e.GET("v1/api/vpn/nextid", app.vpnHandler.NextId)
-	app.e.GET("v1/api/vpn/:vpnId", app.vpnHandler.Get)
+
+	// Used by user-data script to retrieve the vpn instance that is being created
+	app.e.GET("v1/api/vpn/pending", app.vpnHandler.GetPendingId)
+	// Used by user-data script to notify when everything has been created or not
 	app.e.POST("v1/api/vpn/notify/:vpnId", app.vpnHandler.Notify)
+
+	// app.e.GET("v1/api/vpn/:vpnId", app.vpnHandler.Get)
 
 	app.e.GET("v1/api/peer", app.peerHandler.List)
 }
@@ -110,8 +115,9 @@ func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, e
 			CommandProcessor: cmdProcessor,
 		},
 		vpnHandler: &handler.VPNHandler{
-			WebhookSecret: cfg.WebhookSecret,
-			VPNSvc:        vpnService,
+			WebhookSecret:  cfg.WebhookSecret,
+			VPNSvc:         vpnService,
+			TelegramClient: client,
 		},
 		peerHandler: &handler.PeerHandler{
 			WebhookSecret: cfg.WebhookSecret,

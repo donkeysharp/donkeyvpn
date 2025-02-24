@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/labstack/gommon/log"
@@ -17,8 +18,10 @@ func getBaseUrl(token string) string {
 	return fmt.Sprintf(BASE_URL, token)
 }
 
+type ChatId uint64
+
 type replyMessage struct {
-	ChatId uint32 `json:"chat_id"`
+	ChatId ChatId `json:"chat_id"`
 	Text   string `json:"text"`
 }
 
@@ -35,6 +38,7 @@ func (c *Client) SendMessage(message string, chat *Chat) error {
 		return err
 	}
 	url := getBaseUrl(c.BotAPIToken + "/sendMessage")
+	log.Infof("Sending message to telegram. ChatId: %v Message: %v", chat.ChatId, message)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(buf))
 	if err != nil {
 		log.Error("Error while creating sendMessage request")
@@ -47,6 +51,12 @@ func (c *Client) SendMessage(message string, chat *Chat) error {
 		return err
 	}
 	log.Infof("sendMessage status code: %d", resp.StatusCode)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Warnf("Error while reading sendMessage response body %v", err.Error())
+		return nil
+	}
+	log.Infof("sendMessage response %v", string(respBody))
 	return nil
 }
 

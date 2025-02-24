@@ -12,7 +12,7 @@ type User struct {
 }
 
 type Chat struct {
-	ChatId    uint32
+	ChatId    ChatId
 	FirstName string
 	LastName  string
 	Username  string
@@ -63,8 +63,10 @@ func NewUpdate(body map[string]interface{}) (*Update, error) {
 	userRaw := messageRaw["from"].(map[string]interface{})
 
 	user := &User{
-		Id:       uint32(userRaw["id"].(float64)),
-		Username: userRaw["username"].(string),
+		Id: uint32(userRaw["id"].(float64)),
+	}
+	if val, ok := userRaw["username"].(string); ok {
+		user.Username = val
 	}
 	if val, ok := userRaw["fist_name"].(string); ok {
 		user.LastName = val
@@ -75,9 +77,11 @@ func NewUpdate(body map[string]interface{}) (*Update, error) {
 
 	chatRaw := messageRaw["chat"].(map[string]interface{})
 	chat := &Chat{
-		ChatId:   uint32(chatRaw["id"].(float64)),
-		Username: chatRaw["username"].(string),
-		Type:     chatRaw["type"].(string),
+		ChatId: ChatId(chatRaw["id"].(float64)),
+		Type:   chatRaw["type"].(string),
+	}
+	if val, ok := chatRaw["username"].(string); ok {
+		chat.Username = val
 	}
 	if val, ok := chatRaw["first_name"].(string); ok {
 		chat.FirstName = val
@@ -91,12 +95,17 @@ func NewUpdate(body map[string]interface{}) (*Update, error) {
 		entities = parseMessageEntities(messageRaw["entities"].([]interface{}))
 	}
 
+	messageText := "/help" // Use /help in case no text is in the message e.g. audio, image
+	if val, ok := messageRaw["text"].(string); ok {
+		messageText = val
+	}
+
 	update.Message = &Message{
 		MessageId: uint32(messageRaw["message_id"].(float64)),
 		From:      user,
 		Date:      time.Unix(int64(messageRaw["date"].(float64)), 0),
 		Chat:      chat,
-		Text:      messageRaw["text"].(string),
+		Text:      messageText,
 		Entities:  entities,
 	}
 

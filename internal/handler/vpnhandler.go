@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/donkeysharp/donkeyvpn/internal/models"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
+	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
@@ -12,8 +14,9 @@ import (
 type JSONObj map[string]interface{}
 
 type VPNHandler struct {
-	WebhookSecret string
-	VPNSvc        *service.VPNService
+	WebhookSecret  string
+	VPNSvc         *service.VPNService
+	TelegramClient *telegram.Client
 }
 
 type NotificationRequest struct {
@@ -34,46 +37,25 @@ func (r *NotificationRequest) ToModel() interface{} {
 	}
 }
 
-func (h *VPNHandler) NextId(c echo.Context) error {
-	nextId, err := h.VPNSvc.NextId()
+func (h *VPNHandler) GetPendingId(c echo.Context) error {
+	instances, err := h.VPNSvc.ListPending()
 	if err != nil {
-		log.Errorf("Could not get next id: %v", err.Error())
+		log.Errorf("Error retrieving pending instances: %v", err.Error())
 		return c.String(http.StatusInternalServerError, GenericErrorMessage)
 	}
-	response := map[string]string{
-		"nextId": nextId,
-	}
-	return c.JSON(http.StatusAccepted, response)
-}
-
-func (h *VPNHandler) Get(c echo.Context) error {
-	vpnId := c.Param("vpnId")
-	instance, err := h.VPNSvc.Get(vpnId)
-	if err != nil {
-		if err == service.ErrVPNInstanceNotFound {
-			return c.JSON(http.StatusNotFound, JSONObj{
-				"message": "VPN instance not found",
-			})
-		}
-		log.Errorf("Failed to retrieve VPN instance: %v", err.Error())
-		return c.JSON(http.StatusInternalServerError, JSONObj{
-			"message": GenericErrorMessage,
-		})
-	}
-	return c.JSON(http.StatusOK, instance)
+	return c.JSON(http.StatusAccepted, instances)
 }
 
 func (h *VPNHandler) Notify(c echo.Context) error {
 	vpnId := c.Param("vpnId")
-
 	var req *NotificationRequest = new(NotificationRequest)
 	if err := c.Bind(&req); err != nil {
 		log.Errorf("Could not process %v", err.Error())
 		return c.JSON(http.StatusBadRequest, JSONObj{"error": GenericErrorMessage})
 	}
 	req.Id = vpnId
-	log.Infof("Registering vpnId: %s hostname: %s status: %s", req.Id, req.Hostname, req.Status)
-	err := h.VPNSvc.Update(req.ToModel().(models.VPNInstance))
+	log.Infof("	 vpnId: %s hostname: %s status: %s", req.Id, req.Hostname, req.Status)
+	instance, err := h.VPNSvc.Update(req.ToModel().(models.VPNInstance))
 	if err != nil {
 		if err == service.ErrVPNInstanceNotFound {
 			return c.JSON(http.StatusNotFound, JSONObj{
@@ -86,8 +68,16 @@ func (h *VPNHandler) Notify(c echo.Context) error {
 		})
 	}
 
+	if instance.ChatId != "" {
+		chat := &telegram.Chat{
+			ChatId: instance.ChatIdValue(),
+		}
+		message := fmt.Sprintf("VPN Instance with id %v provisioned successfully.", instance.Id)
+		h.TelegramClient.SendMessage(message, chat)
+	}
+
 	log.Infof("NotificationRequest: %v ", req)
 	return c.JSON(http.StatusAccepted, JSONObj{
-		"message": "VPN instance registered",
+		"message": "VPN instance registered successfully",
 	})
 }
