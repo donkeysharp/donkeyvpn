@@ -5,7 +5,7 @@ import (
 )
 
 type User struct {
-	Id        uint32
+	Id        ChatId
 	FirstName string
 	LastName  string
 	Username  string
@@ -63,7 +63,7 @@ func NewUpdate(body map[string]interface{}) (*Update, error) {
 	userRaw := messageRaw["from"].(map[string]interface{})
 
 	user := &User{
-		Id: uint32(userRaw["id"].(float64)),
+		Id: ChatId(userRaw["id"].(float64)),
 	}
 	if val, ok := userRaw["username"].(string); ok {
 		user.Username = val
