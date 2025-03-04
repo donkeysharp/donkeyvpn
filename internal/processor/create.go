@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"fmt"
+
 	"github.com/donkeysharp/donkeyvpn/internal/models"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
@@ -105,6 +107,9 @@ func (p CreateProcessor) Process(args []string, update *telegram.Update) error {
 		ipAddress := args[1]
 		publicKey := args[2]
 		username := update.Message.Chat.Username
+		if username == "" {
+			username = fmt.Sprintf("%v", update.Message.From.Id)
+		}
 		return p.CreatePeer(ipAddress, publicKey, username, update)
 	}
 
