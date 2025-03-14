@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	echoadapter "github.com/awslabs/aws-lambda-go-api-proxy/echo"
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/handler"
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
@@ -21,28 +24,36 @@ type DonkeyVPNConfig struct {
 	AutoscalingGroupName string
 	PeersTableName       string
 	InstancesTableName   string
+	RunAsLambda          bool
 }
 
 type DonkeyVPNApplication struct {
 	e              *echo.Echo
+	runAsLambda    bool
 	webhookSecret  string
 	webhookHandler *handler.WebhookHandler
 	vpnHandler     *handler.VPNHandler
 	peerHandler    *handler.PeerHandler
 }
 
+var echoLambda *echoadapter.EchoLambdaV2
+
 func (app *DonkeyVPNApplication) registerRoutes() {
+	api := app.e.Group("/v1/api")
+
+	// Authentication
+	api.Use(app.SecretBasedAuth)
 	// Telegram bot will send all messages to this endpoint
-	app.e.POST("/telegram/donkeyvpn/webhook", app.webhookHandler.Handle)
-
+	api.POST("/telegram/donkeyvpn/webhook", app.webhookHandler.Handle)
 	// Used by user-data script to retrieve the vpn instance that is being created
-	app.e.GET("v1/api/vpn/pending", app.vpnHandler.GetPendingId)
+	api.GET("/vpn/pending", app.vpnHandler.GetPendingId)
 	// Used by user-data script to notify when everything has been created or not
-	app.e.POST("v1/api/vpn/notify/:vpnId", app.vpnHandler.Notify)
+	api.POST("/vpn/notify/:vpnId", app.vpnHandler.Notify)
+	// Used for validation
+	api.GET("/peer", app.peerHandler.List)
 
-	// app.e.GET("v1/api/vpn/:vpnId", app.vpnHandler.Get)
-
-	app.e.GET("v1/api/peer", app.peerHandler.List)
+	// public endpoints
+	app.e.GET("/donkeyvpn/ping", app.vpnHandler.Ping)
 }
 
 func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.HandlerFunc {
@@ -61,10 +72,23 @@ func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.Han
 	}
 }
 
+func (app *DonkeyVPNApplication) HandlerV2(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	return echoLambda.ProxyWithContext(ctx, req)
+}
+
 func (app *DonkeyVPNApplication) Start() {
-	app.e.Use(app.SecretBasedAuth)
 	app.registerRoutes()
-	app.e.Logger.Fatal(app.e.Start(":8080"))
+
+	if !app.runAsLambda {
+		log.Info("Running as like executable application")
+		app.e.Logger.Fatal(app.e.Start(":8080"))
+	} else {
+		// Starting lambda handler with compatibility to Echo
+		log.Info("Running as a Lambda handler")
+		echoLambda = echoadapter.NewV2(app.e)
+		lambda.Start(app.HandlerV2)
+	}
+
 }
 
 func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, error) {
@@ -109,6 +133,7 @@ func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, e
 
 	return &DonkeyVPNApplication{
 		e:             e,
+		runAsLambda:   cfg.RunAsLambda,
 		webhookSecret: cfg.WebhookSecret,
 		webhookHandler: &handler.WebhookHandler{
 			WebhookSecret:    cfg.WebhookSecret,

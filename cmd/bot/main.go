@@ -15,6 +15,11 @@ func main() {
 	var autoscalingGroupName string = os.Getenv("AUTOSCALING_GROUP_NAME")
 	var peersTableName string = os.Getenv("DYNAMODB_PEERS_TABLE_NAME")
 	var instancesTableName string = os.Getenv("DYNAMODB_INSTANCES_TABLE_NAME")
+	var runAsLambdaStr string = os.Getenv("RUN_AS_LAMBDA")
+	var runAsLambda bool = false
+	if runAsLambdaStr == "true" {
+		runAsLambda = true
+	}
 
 	e := echo.New()
 	app, err := app.NewApplication(app.DonkeyVPNConfig{
@@ -23,6 +28,7 @@ func main() {
 		AutoscalingGroupName: autoscalingGroupName,
 		PeersTableName:       peersTableName,
 		InstancesTableName:   instancesTableName,
+		RunAsLambda:          runAsLambda,
 	}, e)
 
 	if err != nil {

@@ -81,3 +81,10 @@ func (h *VPNHandler) Notify(c echo.Context) error {
 		"message": "VPN instance registered successfully",
 	})
 }
+
+func (h *VPNHandler) Ping(c echo.Context) error {
+	log.Info("Ping event")
+	return c.JSON(http.StatusAccepted, JSONObj{
+		"message": "Pong from donkeyvpn",
+	})
+}
