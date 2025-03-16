@@ -13,6 +13,7 @@ func getUsage() string {
 	__usage += "/list peers\n"
 	__usage += "/delete vpn <vpn_id>\n"
 	__usage += "/delete peer <peer_ip>\n"
+	__usage += "/help\n"
 
 	return __usage
 }

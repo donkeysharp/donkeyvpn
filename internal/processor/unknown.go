@@ -21,7 +21,7 @@ type UnknowCommandProcessor struct {
 
 func (p UnknowCommandProcessor) Process(args []string, update *telegram.Update) error {
 	log.Info("Processing unknown command")
-	message := fmt.Sprintf("Sorry, invalid command\nUsage:\n%s", getUsage())
+	message := fmt.Sprintf("Usage:\n%s", getUsage())
 	err := p.Client.SendMessage(message, update.Message.Chat)
 	if err != nil {
 		log.Error("UnknowCommandProcessor: Error while sending message to Telegram")
