@@ -1,6 +1,7 @@
 variable "hosted_zone" {
   type        = string
   description = "Hosted Zone ID for the VPN"
+  default     = "none"
 }
 
 variable "environment" {
@@ -73,6 +74,18 @@ variable "kms_key_alias" {
 }
 
 variable "api_secret" {
-  type = string
+  type        = string
+  sensitive   = true
   description = "Secret value required by any webhook or api communication."
+}
+
+variable "telegram_bot_api_token" {
+  type        = string
+  sensitive   = true
+  description = "Telegram bot API token"
+}
+
+variable "golang_executable_path" {
+  type        = string
+  description = "Where the 'bootstrap' executable is located"
 }

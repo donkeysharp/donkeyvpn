@@ -1,4 +1,4 @@
-resource "aws_iam_role" "this" {
+resource "aws_iam_role" "asg" {
   name = local.ec2_role_name
 
   assume_role_policy = jsonencode({
@@ -20,9 +20,9 @@ resource "aws_iam_role" "this" {
   })
 }
 
-resource "aws_iam_instance_profile" "this" {
-  name = aws_iam_role.this.name
-  role = aws_iam_role.this.name
+resource "aws_iam_instance_profile" "asg" {
+  name = aws_iam_role.asg.name
+  role = aws_iam_role.asg.name
 }
 
 resource "aws_iam_policy" "vpn_permissions" {
@@ -58,30 +58,16 @@ resource "aws_iam_policy" "vpn_permissions" {
           data.aws_kms_alias.ssm.target_key_arn
         ]
       },
-      {
-        Action = [
-          "dynamodb:PutItem",
-          "dynamodb:GetItem",
-          "dynamodb:UpdateItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Query",
-          "dynamodb:Scan"
-        ]
-        Effect   = "Allow"
-        Resource = [
-          aws_dynamodb_table.donkeyvpn_peers.arn,
-          aws_dynamodb_table.donkeyvpn_instances.arn
-        ]
-      }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "this" {
-  role       = aws_iam_role.this.name
+resource "aws_iam_role_policy_attachment" "asg" {
+  role       = aws_iam_role.asg.name
   policy_arn = aws_iam_policy.vpn_permissions.arn
 }
 
+# IAM resources required by DonkeyVPN running on lambda
 resource "aws_iam_role" "lambda_exec" {
   name = "${local.prefix}-lambda-exec"
 
@@ -104,7 +90,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_policy" "lambda_permissions" {
+resource "aws_iam_policy" "donkeyvpn_permissions" {
   name        = "${local.prefix}-lambda-exec-permissions"
   path        = "/"
   description = "Policy used by Donkey VPN project in lambda"
@@ -129,12 +115,29 @@ resource "aws_iam_policy" "lambda_permissions" {
       },
       {
         Action = [
-          "ec2:*"
+          "autoscaling:UpdateAutoScalingGroup",
+          "autoscaling:TerminateInstanceInAutoScalingGroup",
         ]
         Effect   = "Allow"
         Resource = [
-          "*"
+          aws_autoscaling_group.default.arn
         ]
+      },
+      {
+        Action = [
+          "autoscaling:DescribeAutoScalingGroups",
+        ],
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action   = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:*:*:*"
       }
     ]
   })
@@ -142,5 +145,5 @@ resource "aws_iam_policy" "lambda_permissions" {
 
 resource "aws_iam_role_policy_attachment" "lambda" {
   role       = aws_iam_role.lambda_exec.name
-  policy_arn = aws_iam_policy.lambda_permissions.arn
+  policy_arn = aws_iam_policy.donkeyvpn_permissions.arn
 }
