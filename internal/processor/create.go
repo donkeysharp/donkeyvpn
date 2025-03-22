@@ -25,42 +25,35 @@ type CreateProcessor struct {
 	peerSvc *service.PeerService
 }
 
-func (p CreateProcessor) sendMessage(msg string, update *telegram.Update) {
-	err2 := p.Client.SendMessage(msg, update.Message.Chat)
-	if err2 != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", msg)
-	}
-}
-
 func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
 	result, err := p.vpnSvc.Create(update.Message.Chat.ChatId)
 	if err != nil {
 		log.Error("VPN instance creation failed")
 		if err == service.ErrMaxCapacity {
 			msg := "Maximum capacity reached, cannot create more instances."
-			p.sendMessage(msg, update)
+			p.SendMessage(msg, update)
 			return err
 		} else if err == service.ErrVPNInstanceCreating {
 			msg := "There is an instance that currently is being created."
 			msg += " Wait for it to finish before creating a new one."
-			p.sendMessage(msg, update)
+			p.SendMessage(msg, update)
 			return err
 		} else {
 			log.Errorf("Error while creating vpn instance: %v", err.Error())
-			p.sendMessage("VPN instance creation failed", update)
+			p.SendMessage("VPN instance creation failed", update)
 			return err
 		}
 	}
 
 	if !result {
 		log.Error("Although no error was raised, the result of instance creation is false")
-		p.sendMessage("VPN instance creation failed", update)
+		p.SendMessage("VPN instance creation failed", update)
 		return nil
 	}
 
 	msg := "Processing request... once the vpn server is ready, "
 	msg += "you will be notified or use the /list vpn command to get available ephemeral VPNs."
-	p.sendMessage(msg, update)
+	p.SendMessage(msg, update)
 	return nil
 }
 
@@ -74,24 +67,24 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 	if err != nil {
 		log.Errorf("Failed to create wireguard peer %v", err.Error())
 		if err == service.ErrInvalidWireguardKey {
-			p.sendMessage("Invalid wireguard key format, please use a valid key and try again.", update)
+			p.SendMessage("Invalid wireguard key format, please use a valid key and try again.", update)
 			return err
 		}
 		if err == service.ErrInvalidIPAddress {
-			p.sendMessage("Invalid IP address, it must be in the 10.0.0.0/24 range", update)
+			p.SendMessage("Invalid IP address, it must be in the 10.0.0.0/24 range", update)
 			return err
 		}
-		p.sendMessage("Error adding wireguard peer, please try again.", update)
+		p.SendMessage("Error adding wireguard peer, please try again.", update)
 		return err
 	}
 
 	if !created {
 		log.Warnf("Wireguard peer could not be added, result was 'false'")
-		p.sendMessage("Wireguard peer could not be added, please try again.", update)
+		p.SendMessage("Wireguard peer could not be added, please try again.", update)
 	}
 
 	log.Infof("Wireguard peer added successfully")
-	p.sendMessage("Wireguard peer added successfully", update)
+	p.SendMessage("Wireguard peer added successfully", update)
 
 	return nil
 }
@@ -114,9 +107,6 @@ func (p CreateProcessor) Process(args []string, update *telegram.Update) error {
 	}
 
 	usage := getUsage()
-	err := p.Client.SendMessage(usage, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", usage)
-	}
+	p.SendMessage(usage, update)
 	return nil
 }

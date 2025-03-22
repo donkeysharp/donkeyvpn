@@ -24,18 +24,11 @@ type ListProcessor struct {
 	peerService *service.PeerService
 }
 
-func (p ListProcessor) sendMessage(msg string, update *telegram.Update) {
-	err := p.Client.SendMessage(msg, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", msg)
-	}
-}
-
 func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 	log.Info("Listing vpn instances for telegram")
 	instances, err := p.vpnService.ListArray()
 	if err != nil {
-		p.sendMessage("Error while retrieving VPN instances. Try again please.", update)
+		p.SendMessage("Error while retrieving VPN instances. Try again please.", update)
 	}
 	message := "List of instances:\n-----\n"
 	for _, item := range instances {
@@ -51,7 +44,7 @@ func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 		message = "No VPN instances available"
 	}
 
-	p.sendMessage(message, update)
+	p.SendMessage(message, update)
 	return nil
 }
 
@@ -59,7 +52,7 @@ func (p ListProcessor) ListPeers(update *telegram.Update) error {
 	log.Infof("Listing peers for telegram")
 	peers, err := p.peerService.List()
 	if err != nil {
-		p.sendMessage("Error while retrieving peers. Try again please.", update)
+		p.SendMessage("Error while retrieving peers. Try again please.", update)
 		return err
 	}
 
@@ -75,7 +68,7 @@ func (p ListProcessor) ListPeers(update *telegram.Update) error {
 	if len(peers) == 0 {
 		message = "No peers available"
 	}
-	p.sendMessage(message, update)
+	p.SendMessage(message, update)
 	return nil
 }
 
@@ -91,9 +84,6 @@ func (p ListProcessor) Process(args []string, update *telegram.Update) error {
 		return p.ListPeers(update)
 	}
 
-	err := p.Client.SendMessage(usage, update.Message.Chat)
-	if err != nil {
-		log.Errorf("Error sending message to Telegram. msg=%s", usage)
-	}
+	p.SendMessage(usage, update)
 	return nil
 }
