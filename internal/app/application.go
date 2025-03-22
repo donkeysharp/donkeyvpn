@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	echoadapter "github.com/awslabs/aws-lambda-go-api-proxy/echo"
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
+	"github.com/donkeysharp/donkeyvpn/internal/config"
 	"github.com/donkeysharp/donkeyvpn/internal/handler"
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
@@ -17,15 +18,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
-
-type DonkeyVPNConfig struct {
-	TelegramBotAPIToken  string
-	WebhookSecret        string
-	AutoscalingGroupName string
-	PeersTableName       string
-	InstancesTableName   string
-	RunAsLambda          bool
-}
 
 type DonkeyVPNApplication struct {
 	e              *echo.Echo
@@ -91,7 +83,7 @@ func (app *DonkeyVPNApplication) Start() {
 
 }
 
-func NewApplication(cfg DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, error) {
+func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplication, error) {
 	if cfg.TelegramBotAPIToken == "" {
 		msg := "missing telegram bot API token"
 		log.Error(msg)

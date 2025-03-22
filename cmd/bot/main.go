@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/donkeysharp/donkeyvpn/internal/app"
+	"github.com/donkeysharp/donkeyvpn/internal/config"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
@@ -22,7 +23,7 @@ func main() {
 	}
 
 	e := echo.New()
-	app, err := app.NewApplication(app.DonkeyVPNConfig{
+	app, err := app.NewApplication(config.DonkeyVPNConfig{
 		TelegramBotAPIToken:  telegramBotAPIToken,
 		WebhookSecret:        webhookSecret,
 		AutoscalingGroupName: autoscalingGroupName,
