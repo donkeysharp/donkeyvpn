@@ -12,12 +12,13 @@ import (
 
 var ErrFailedToCreateWireguardPeer = fmt.Errorf("failed to create wireguard peer")
 var ErrInvalidWireguardKey = fmt.Errorf("invalid wireguard key format")
-var ErrInvalidIPAddress = fmt.Errorf("invalid IP address it must be in 10.0.0.0/24 range")
+var ErrInvalidIPAddress = fmt.Errorf("invalid IP address range")
 var ErrWireguardPeerNotFound = fmt.Errorf("wireguard peer not found")
 
-func NewWireguardPeerService(table *aws.DynamoDB) *PeerService {
+func NewWireguardPeerService(table *aws.DynamoDB, cidrRange string) *PeerService {
 	return &PeerService{
-		table: table,
+		table:     table,
+		CidrRange: cidrRange,
 	}
 }
 
@@ -26,8 +27,8 @@ func isValidKey(key string) bool {
 	return err == nil && len(decodedKey) == 32
 }
 
-func isValidIPAddress(ipAddress string) bool {
-	_, cidrNet, err := net.ParseCIDR("10.0.0.0/24") // TODO: move to global settings instead of hardcoding it
+func isValidIPAddress(ipAddress, cidrRange string) bool {
+	_, cidrNet, err := net.ParseCIDR(cidrRange)
 	if err != nil {
 		return false
 	}
@@ -35,7 +36,8 @@ func isValidIPAddress(ipAddress string) bool {
 }
 
 type PeerService struct {
-	table *aws.DynamoDB
+	table     *aws.DynamoDB
+	CidrRange string
 }
 
 func (s *PeerService) Create(item *models.WireguardPeer) (bool, error) {
@@ -43,7 +45,7 @@ func (s *PeerService) Create(item *models.WireguardPeer) (bool, error) {
 		return false, ErrInvalidWireguardKey
 	}
 
-	if !isValidIPAddress(item.IPAddress) {
+	if !isValidIPAddress(item.IPAddress, s.CidrRange) {
 		return false, ErrInvalidIPAddress
 	}
 

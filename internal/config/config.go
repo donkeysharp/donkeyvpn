@@ -7,5 +7,6 @@ type DonkeyVPNConfig struct {
 	PeersTableName       string
 	InstancesTableName   string
 	PublicKeySSMParam    string
+	WireguardCidrRange   string
 	RunAsLambda          bool
 }

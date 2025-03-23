@@ -115,7 +115,7 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 	}
 
 	vpnService := service.NewVPNService(asg, instancesTable)
-	peerService := service.NewWireguardPeerService(peersTable)
+	peerService := service.NewWireguardPeerService(peersTable, cfg.WireguardCidrRange)
 
 	cmdProcessor := processor.NewCommandProcessor()
 	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService, peerService))

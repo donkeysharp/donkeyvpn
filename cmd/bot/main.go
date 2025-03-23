@@ -17,6 +17,8 @@ func main() {
 	var peersTableName string = os.Getenv("DYNAMODB_PEERS_TABLE_NAME")
 	var instancesTableName string = os.Getenv("DYNAMODB_INSTANCES_TABLE_NAME")
 	var runAsLambdaStr string = os.Getenv("RUN_AS_LAMBDA")
+	var publicKeySSMParam string = os.Getenv("SSM_PUBLIC_KEY")
+	var wireguardCidrRange string = os.Getenv("WIREGUARD_CIDR_RANGE")
 	var runAsLambda bool = false
 	if runAsLambdaStr == "true" {
 		runAsLambda = true
@@ -29,6 +31,8 @@ func main() {
 		AutoscalingGroupName: autoscalingGroupName,
 		PeersTableName:       peersTableName,
 		InstancesTableName:   instancesTableName,
+		PublicKeySSMParam:    publicKeySSMParam,
+		WireguardCidrRange:   wireguardCidrRange,
 		RunAsLambda:          runAsLambda,
 	}, e)
 

@@ -71,7 +71,10 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 			return err
 		}
 		if err == service.ErrInvalidIPAddress {
-			p.SendMessage("Invalid IP address, it must be in the 10.0.0.0/24 range", update)
+			p.SendMessage(
+				fmt.Sprintf("Invalid IP address, it must be in the %v range", p.peerSvc.CidrRange),
+				update,
+			)
 			return err
 		}
 		p.SendMessage("Error adding wireguard peer, please try again.", update)
