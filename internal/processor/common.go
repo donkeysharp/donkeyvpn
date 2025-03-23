@@ -8,11 +8,11 @@ func getUsage() string {
 	}
 
 	__usage = "/create vpn\n"
-	__usage += "/create peer <peer_ip> <public_key>\n"
+	__usage += "/create peer \\<peer\\_ip\\> \\<public\\_key\\>\n"
 	__usage += "/list vpn\n"
 	__usage += "/list peers\n"
-	__usage += "/delete vpn <vpn_id>\n"
-	__usage += "/delete peer <peer_ip>\n"
+	__usage += "/delete vpn \\<vpn\\_id\\>\n"
+	__usage += "/delete peer \\<peer\\_ip\\>\n"
 	__usage += "/settings\n"
 	__usage += "/help\n"
 
