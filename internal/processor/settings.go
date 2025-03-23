@@ -39,6 +39,7 @@ func (p *SettingsProcessor) Process(args []string, update *telegram.Update) erro
 	message := ""
 	message += fmt.Sprintf("*VPN Public Key*: `%v\n`", value)
 	message += fmt.Sprintf("*Wireguard IP Range*: `%v`\n", p.config.WireguardCidrRange)
+	message += "\\-\\-\\-\\-\\-\n"
 
 	p.SendMessage(message, update)
 

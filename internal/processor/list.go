@@ -30,14 +30,14 @@ func (p ListProcessor) ListVPNs(update *telegram.Update) error {
 	if err != nil {
 		p.SendMessage("Error while retrieving VPN instances. Try again please.", update)
 	}
-	message := "List of instances:\n-----\n"
+	message := "List of instances:\n\\-\\-\\-\\-\\-\n"
 	for _, item := range instances {
 		log.Infof("Proccessing instance: %v", item)
 		message += fmt.Sprintf("Id: %s\n", item.Id)
 		message += fmt.Sprintf("Hostname: %s\n", item.Hostname)
 		message += fmt.Sprintf("Port: %s\n", item.Port)
 		message += fmt.Sprintf("Status: %s\n", item.Status)
-		message += "-----\n"
+		message += "\\-\\-\\-\\-\\-\n"
 	}
 
 	if len(instances) == 0 {
@@ -56,13 +56,13 @@ func (p ListProcessor) ListPeers(update *telegram.Update) error {
 		return err
 	}
 
-	message := "List of peers:\n-----\n"
+	message := "List of peers:\n\\-\\-\\-\\-\\-\n"
 	for _, item := range peers {
 		log.Infof("Processing peer: %s", item.IPAddress)
 		message += fmt.Sprintf("IP Address: %s\n", item.IPAddress)
 		message += fmt.Sprintf("Public Key: %s\n", item.PublicKey)
 		message += fmt.Sprintf("Username: %s\n", item.Username)
-		message += "-----\n"
+		message += "\\-\\-\\-\\-\\-\n"
 	}
 
 	if len(peers) == 0 {
