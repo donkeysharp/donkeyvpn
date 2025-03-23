@@ -8,6 +8,8 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+const DELETE_ALL_INSTANCES = "all"
+
 func NewDeleteProcessor(client *telegram.Client, vpnSvc *service.VPNService, peerSvc *service.PeerService) DeleteProcessor {
 	return DeleteProcessor{
 		ProcessorShared: ProcessorShared{
@@ -29,6 +31,17 @@ func (p DeleteProcessor) Process(args []string, update *telegram.Update) error {
 
 	if len(args) == 2 && args[0] == "vpn" {
 		vpnId := args[1]
+
+		if vpnId == DELETE_ALL_INSTANCES {
+			err := p.vpnSvc.ResetInstances()
+			if err != nil {
+				p.SendMessage("❌ Error while resetting DonkeyVPN, please try again", update)
+				return err
+			}
+			p.SendMessage("✅ All VPN instances were deleted successfully", update)
+			return nil
+		}
+
 		result, err := p.vpnSvc.Delete(vpnId)
 		if err != nil {
 			p.SendMessage("❌ Error while deleting VPN instance, please try again", update)

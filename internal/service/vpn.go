@@ -207,3 +207,28 @@ func (s *VPNService) Delete(vpnId string) (bool, error) {
 	log.Infof("Instance with id %v deleted successfully", vpnId)
 	return true, nil
 }
+
+func (s *VPNService) ResetInstances() error {
+	err := s.asg.UpdateCapacity(0)
+	if err != nil {
+		log.Errorf("Error while reseting ASG desired capacity to 0: %v", err.Error())
+		return err
+	}
+	log.Info("ASG capacity reset successfully")
+
+	instances, err := s.ListArray()
+	if err != nil {
+		log.Errorf("Failed to retrieve all instance records from dynamodb")
+		return err
+	}
+	for _, instance := range instances {
+		log.Infof("Deleting instance %v", instance.Id)
+		err := s.table.DeleteRecord(instance)
+		if err != nil {
+			log.Errorf("Failed to delete instance %v", err.Error())
+			return err
+		}
+	}
+	log.Info("All instances were deleted successfully")
+	return nil
+}
