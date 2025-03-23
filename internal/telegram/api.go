@@ -21,8 +21,9 @@ func getBaseUrl(token string) string {
 type ChatId uint64
 
 type replyMessage struct {
-	ChatId ChatId `json:"chat_id"`
-	Text   string `json:"text"`
+	ChatId    ChatId `json:"chat_id"`
+	Text      string `json:"text"`
+	ParseMode string `json:"parse_mode"`
 }
 
 type Client struct {
@@ -31,7 +32,7 @@ type Client struct {
 }
 
 func (c *Client) SendMessage(message string, chat *Chat) error {
-	reply := replyMessage{ChatId: chat.ChatId, Text: message}
+	reply := replyMessage{ChatId: chat.ChatId, Text: message, ParseMode: "MarkdownV2"}
 	buf, err := json.Marshal(reply)
 	if err != nil {
 		log.Error("Could not marshal replyMessage struct")
