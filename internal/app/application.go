@@ -114,6 +114,11 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 		return nil, err
 	}
 
+	ssmClient, err := aws.NewSSM(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	vpnService := service.NewVPNService(asg, instancesTable)
 	peerService := service.NewWireguardPeerService(peersTable, cfg.WireguardCidrRange)
 
@@ -121,6 +126,7 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/list", processor.NewListProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client, vpnService, peerService))
+	cmdProcessor.Register("/settings", processor.NewSettingsProcessor(client, ssmClient, &cfg))
 	cmdProcessor.RegisterFallback(processor.NewUnknowCommandProcessor(client))
 
 	return &DonkeyVPNApplication{
