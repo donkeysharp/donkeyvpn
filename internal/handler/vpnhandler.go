@@ -72,7 +72,7 @@ func (h *VPNHandler) Notify(c echo.Context) error {
 		chat := &telegram.Chat{
 			ChatId: instance.ChatIdValue(),
 		}
-		message := fmt.Sprintf("VPN Instance with id %v provisioned successfully.", instance.Id)
+		message := fmt.Sprintf("✅ VPN Instance with id `%v` provisioned *successfully*", instance.Id)
 		h.TelegramClient.SendMessage(message, chat)
 	}
 

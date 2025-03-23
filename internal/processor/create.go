@@ -30,29 +30,29 @@ func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
 	if err != nil {
 		log.Error("VPN instance creation failed")
 		if err == service.ErrMaxCapacity {
-			msg := "Maximum capacity reached, cannot create more instances."
+			msg := "⚠ Maximum capacity reached, cannot create more instances."
 			p.SendMessage(msg, update)
 			return err
 		} else if err == service.ErrVPNInstanceCreating {
-			msg := "There is an instance that currently is being created."
+			msg := "⚠ There is an instance that currently is being created."
 			msg += " Wait for it to finish before creating a new one."
 			p.SendMessage(msg, update)
 			return err
 		} else {
 			log.Errorf("Error while creating vpn instance: %v", err.Error())
-			p.SendMessage("VPN instance creation failed", update)
+			p.SendMessage("❌ VPN instance creation failed", update)
 			return err
 		}
 	}
 
 	if !result {
 		log.Error("Although no error was raised, the result of instance creation is false")
-		p.SendMessage("VPN instance creation failed", update)
+		p.SendMessage("❌ VPN instance creation failed", update)
 		return nil
 	}
 
-	msg := "Processing request... once the vpn server is ready, "
-	msg += "you will be notified or use the /list vpn command to get available ephemeral VPNs."
+	msg := "⏳ Processing request... once the vpn server is ready, "
+	msg += "you will be notified or use the `/list vpn` command to get available ephemeral VPNs."
 	p.SendMessage(msg, update)
 	return nil
 }
@@ -67,27 +67,27 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 	if err != nil {
 		log.Errorf("Failed to create wireguard peer %v", err.Error())
 		if err == service.ErrInvalidWireguardKey {
-			p.SendMessage("Invalid wireguard key format, please use a valid key and try again.", update)
+			p.SendMessage("❌ Invalid wireguard key format, please use a valid key and try again.", update)
 			return err
 		}
 		if err == service.ErrInvalidIPAddress {
 			p.SendMessage(
-				fmt.Sprintf("Invalid IP address, it must be in the %v range", p.peerSvc.CidrRange),
+				fmt.Sprintf("❌ Invalid IP address, it must be in the %v range", p.peerSvc.CidrRange),
 				update,
 			)
 			return err
 		}
-		p.SendMessage("Error adding wireguard peer, please try again.", update)
+		p.SendMessage("❌ Error adding wireguard peer, please try again.", update)
 		return err
 	}
 
 	if !created {
 		log.Warnf("Wireguard peer could not be added, result was 'false'")
-		p.SendMessage("Wireguard peer could not be added, please try again.", update)
+		p.SendMessage("⚠ Wireguard peer could not be added, please try again.", update)
 	}
 
 	log.Infof("Wireguard peer added successfully")
-	p.SendMessage("Wireguard peer added successfully", update)
+	p.SendMessage("✅ Wireguard peer added *successfully*", update)
 
 	return nil
 }

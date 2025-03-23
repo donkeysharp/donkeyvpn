@@ -31,15 +31,15 @@ func (p DeleteProcessor) Process(args []string, update *telegram.Update) error {
 		vpnId := args[1]
 		result, err := p.vpnSvc.Delete(vpnId)
 		if err != nil {
-			p.SendMessage("Error while deleting VPN instance, please try again.", update)
+			p.SendMessage("❌ Error while deleting VPN instance, please try again", update)
 			return err
 		}
 		if !result {
 			log.Errorf("Although there was not error during deletion of vpn instance %v, the result was false", vpnId)
-			p.SendMessage("Could not delete VPN instance.", update)
+			p.SendMessage("❌ Could not delete VPN instance", update)
 			return nil
 		}
-		p.SendMessage(fmt.Sprintf("VPN intance %v deleted successfully", vpnId), update)
+		p.SendMessage(fmt.Sprintf("✅ VPN intance %v deleted *successfully*", vpnId), update)
 		return nil
 	}
 
@@ -48,17 +48,17 @@ func (p DeleteProcessor) Process(args []string, update *telegram.Update) error {
 		result, err := p.peerSvc.Delete(peerIP)
 		if err != nil {
 			log.Errorf("Error deleting peer %v. Error: %v", peerIP, err)
-			p.SendMessage("Error deleting VPN peer.", update)
+			p.SendMessage("❌ Error deleting VPN peer.", update)
 			return err
 		}
 
 		if !result {
 			log.Errorf("Although code didn't failed, it was not possible to delete peer %v", peerIP)
-			p.SendMessage("Could not delete VPN peer.", update)
+			p.SendMessage("❌ Could not delete VPN peer.", update)
 			return nil
 		}
 
-		p.SendMessage("Peer deleted successfully", update)
+		p.SendMessage("✅ Peer deleted *successfully*", update)
 		return nil
 	}
 

@@ -31,7 +31,7 @@ func (p *SettingsProcessor) Process(args []string, update *telegram.Update) erro
 	value, err := p.ssm.GetParameter(p.config.PublicKeySSMParam, true)
 	if err != nil {
 		log.Errorf("Failed to retrieve ssm parameter %v", err.Error())
-		p.SendMessage("Failed to retrieve settings. Try again please.", update)
+		p.SendMessage("❌ Failed to retrieve settings. Try again please.", update)
 		return err
 	}
 
@@ -39,7 +39,7 @@ func (p *SettingsProcessor) Process(args []string, update *telegram.Update) erro
 	message := ""
 	message += fmt.Sprintf("*VPN Public Key*: `%v\n`", value)
 	message += fmt.Sprintf("*Wireguard IP Range*: `%v`\n", p.config.WireguardCidrRange)
-	message += "\\-\\-\\-\\-\\-\n"
+	message += "-----\n"
 
 	p.SendMessage(message, update)
 

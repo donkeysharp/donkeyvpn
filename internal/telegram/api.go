@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 )
@@ -31,15 +32,27 @@ type Client struct {
 	client      http.Client
 }
 
+func escapeMessage(message string) string {
+	// _*`~ won't be escaped as they are used
+	escapeChars := "[]()>#+-=|{}.!"
+
+	newMessage := message
+	for _, char := range escapeChars {
+		newMessage = strings.ReplaceAll(newMessage, string(char), "\\"+string(char))
+	}
+	return newMessage
+}
+
 func (c *Client) SendMessage(message string, chat *Chat) error {
-	reply := replyMessage{ChatId: chat.ChatId, Text: message, ParseMode: "MarkdownV2"}
+	escapedMessage := escapeMessage(message)
+	reply := replyMessage{ChatId: chat.ChatId, Text: escapedMessage, ParseMode: "MarkdownV2"}
 	buf, err := json.Marshal(reply)
 	if err != nil {
 		log.Error("Could not marshal replyMessage struct")
 		return err
 	}
 	url := getBaseUrl(c.BotAPIToken + "/sendMessage")
-	log.Infof("Sending message to telegram. ChatId: %v Message: %v", chat.ChatId, message)
+	log.Infof("Sending message to telegram. ChatId: %v Message: %v", chat.ChatId, escapedMessage)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(buf))
 	if err != nil {
 		log.Error("Error while creating sendMessage request")
