@@ -153,7 +153,7 @@ function configure_wireguard() {
 
     cat <<EOF >> /etc/wireguard/wg0.conf
 [Interface]
-Address = 10.0.0.1/24
+Address = ${in_wg_interface_address}
 ListenPort = $PORT
 PrivateKey = $PRIVATE_KEY
 
@@ -165,21 +165,11 @@ EOF
     chmod 700 /etc/wireguard/*
 
     log "Route all internet traffic via the VPN"
-    iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -o ens5 -j MASQUERADE
+    iptables -t nat -A POSTROUTING -s ${in_wg_ip_range} -o ens5 -j MASQUERADE
 
     wg-quick up wg0
     systemctl enable wg-quick@wg0
 }
-
-# function register_instance() {
-#     log "Registering $DOMAIN_NAME via api"
-#     result=$(curl -sS -H 'content-type: application/json' \
-#         -H "x-api-key: $API_SECRET" \
-#         --data "{\"hostname\": \"$DOMAIN_NAME\", \"id\": \"$VPN_INSTANCE_ID\", \"port\": \"$PORT\" }" \
-#         -XPOST "$API_BASE_URL/v1/api/vpn")
-
-#     log "Result: $result"
-# }
 
 log "Initializing all the configuration process..."
 

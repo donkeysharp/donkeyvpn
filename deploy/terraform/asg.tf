@@ -65,6 +65,9 @@ resource "aws_launch_template" "default" {
   }
 
   user_data = base64encode(templatefile("${path.module}/templates/userdata.tpl.sh", {
+    in_wg_interface_address = var.wireguard_interface_address
+    in_wg_ip_range          = var.wireguard_ip_range
+
     in_vpn_record_ttl  = "60",
     in_domain_name     = var.vpn_domain_name
     in_hosted_zone_id  = var.hosted_zone

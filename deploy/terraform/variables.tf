@@ -62,12 +62,6 @@ variable "public_key_ssm_param" {
   description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
 }
 
-variable "peers_ssm_param" {
-  type = string
-  default = "donkeyvpn/peers"
-  description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
-}
-
 variable "kms_key_alias" {
   type = string
   default = "alias/aws/ssm"
@@ -88,4 +82,17 @@ variable "telegram_bot_api_token" {
 variable "golang_executable_path" {
   type        = string
   description = "Where the 'bootstrap' executable is located"
+  default     = "../../dist"
+}
+
+variable "wireguard_interface_address" {
+  type        = string
+  description = "(optional) IP address and range for wireguard VPN server"
+  default     = "10.0.0.1/24"
+}
+
+variable "wireguard_ip_range" {
+  type        = string
+  description = "(optional) IP address range for wireguard VPN server"
+  default     = "10.0.0.0/24"
 }
