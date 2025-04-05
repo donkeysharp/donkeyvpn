@@ -67,3 +67,13 @@ data "aws_ssm_parameter" "webhook_secret" {
   name            = var.webhook_secret_ssm_param
   with_decryption = true
 }
+
+resource "local_file" "webhook_register" {
+  content  = templatefile("${path.module}/templates/webhook-register.tpl.sh", {
+    IN_TELEGRAM_BOT_API_TOKEN = data.aws_ssm_parameter.telegram_bot_api_token.value
+    IN_SECRET_TOKEN           = data.aws_ssm_parameter.webhook_secret.value
+    IN_BASE_URL               = trim(aws_apigatewayv2_stage.default.invoke_url, "/")
+  })
+  file_permission = "0755"
+  filename = "/tmp/donkeyvpn-webhook-register.sh"
+}
