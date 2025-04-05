@@ -18,11 +18,13 @@ resource "aws_lambda_function" "golang_function" {
   environment {
     variables = {
       RUN_AS_LAMBDA                 = "true"
-      WEBHOOK_SECRET                = var.api_secret
-      TELEGRAM_BOT_API_TOKEN        = var.telegram_bot_api_token
+      WEBHOOK_SECRET                = data.aws_ssm_parameter.webhook_secret.value
+      TELEGRAM_BOT_API_TOKEN        = data.aws_ssm_parameter.telegram_bot_api_token.value
       AUTOSCALING_GROUP_NAME        = local.autoscaling_group_name
       DYNAMODB_PEERS_TABLE_NAME     = aws_dynamodb_table.donkeyvpn_peers.name
       DYNAMODB_INSTANCES_TABLE_NAME = aws_dynamodb_table.donkeyvpn_instances.name
+      SSM_PUBLIC_KEY                = var.public_key_ssm_param
+      WIREGUARD_CIDR_RANGE          = var.wireguard_ip_range
     }
   }
 }

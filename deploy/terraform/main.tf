@@ -57,3 +57,13 @@ data "aws_ami" "debian" {
 data "aws_kms_alias" "ssm" {
   name = var.kms_key_alias
 }
+
+data "aws_ssm_parameter" "telegram_bot_api_token" {
+  name            = var.telegram_bot_api_token_ssm_param
+  with_decryption = true
+}
+
+data "aws_ssm_parameter" "webhook_secret" {
+  name            = var.webhook_secret_ssm_param
+  with_decryption = true
+}

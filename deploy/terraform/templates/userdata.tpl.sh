@@ -135,14 +135,14 @@ function configure_wireguard() {
     log "PRIVATE_KEY_SSM_PARAM=$PRIVATE_KEY_SSM_PARAM"
     log "PUBLIC_KEY_SSM_PARAM=$PUBLIC_KEY_SSM_PARAM"
     PRIVATE_KEY=$(aws ssm get-parameter \
-        --name "/$PRIVATE_KEY_SSM_PARAM" \
+        --name "$PRIVATE_KEY_SSM_PARAM" \
         --with-decryption \
         --region $REGION \
         --query "Parameter.Value" \
         --output text)
 
     PUBLIC_KEY=$(aws ssm get-parameter \
-        --name "/$PUBLIC_KEY_SSM_PARAM" \
+        --name "$PUBLIC_KEY_SSM_PARAM" \
         --with-decryption \
         --region $REGION \
         --query "Parameter.Value" \

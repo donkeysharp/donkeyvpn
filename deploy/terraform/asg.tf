@@ -75,7 +75,7 @@ resource "aws_launch_template" "default" {
     in_ssm_public_key  = var.public_key_ssm_param
 
     in_api_base_url    = trim(aws_apigatewayv2_stage.default.invoke_url, "/")
-    in_api_secret      = var.api_secret
+    in_api_secret      = data.aws_ssm_parameter.telegram_bot_api_token.value
     in_use_route53     = var.hosted_zone != "none" ? "true" : "false"
   }))
 

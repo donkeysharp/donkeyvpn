@@ -52,31 +52,31 @@ variable "desired_capacity" {
 
 variable "private_key_ssm_param" {
   type = string
-  default = "donkeyvpn/privatekey"
+  default = "/donkeyvpn/privatekey"
   description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
 }
 
 variable "public_key_ssm_param" {
   type = string
-  default = "donkeyvpn/publickey"
+  default = "/donkeyvpn/publickey"
   description = "It is expected that SSM parameter is a SecureString that uses a KMS to encrypt/decrypt. It could be the default one"
+}
+
+variable "telegram_bot_api_token_ssm_param" {
+  type = string
+  default = "/donkeyvpn/telegrambotapikey"
+  description = "SSM Parameter where telegram bot api token is located"
+}
+
+variable "webhook_secret_ssm_param" {
+  type = string
+  default = "/donkeyvpn/webhooksecret"
+  description = "SSM PArameter where webhook secret is located"
 }
 
 variable "kms_key_alias" {
   type = string
   default = "alias/aws/ssm"
-}
-
-variable "api_secret" {
-  type        = string
-  sensitive   = true
-  description = "Secret value required by any webhook or api communication."
-}
-
-variable "telegram_bot_api_token" {
-  type        = string
-  sensitive   = true
-  description = "Telegram bot API token"
 }
 
 variable "golang_executable_path" {
