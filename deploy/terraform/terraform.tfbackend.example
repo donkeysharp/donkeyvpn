@@ -1,0 +1,3 @@
+bucket =
+key    = "production/state.tfstate"
+region = "us-east-1"

@@ -1,0 +1,7 @@
+environment=prod
+hosted_zone=
+instance_type=t3.small
+key_name=
+vpn_domain_name=
+vpc_id=
+subnets=
