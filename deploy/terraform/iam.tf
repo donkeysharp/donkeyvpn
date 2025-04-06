@@ -138,7 +138,25 @@ resource "aws_iam_policy" "donkeyvpn_permissions" {
         ],
         Effect   = "Allow"
         Resource = "arn:aws:logs:*:*:*"
-      }
+      },
+      {
+        Action = [
+          "ssm:GetParameter"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "arn:aws:ssm:${local.region}:${local.account_id}:parameter/*"
+        ]
+      },
+      {
+        Action = [
+          "kms:Decrypt"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          data.aws_kms_alias.ssm.target_key_arn
+        ]
+      },
     ]
   })
 }
