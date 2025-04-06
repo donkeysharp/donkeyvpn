@@ -10,6 +10,8 @@ resource "aws_lambda_function" "golang_function" {
   role          = aws_iam_role.lambda_exec.arn
   handler       = "bootstrap" # it must be bootstrap
 
+  memory_size   = "384"
+
   filename      = "${var.golang_executable_path}/bootstrap.zip"
   source_code_hash = data.archive_file.binary.output_base64sha256
 
