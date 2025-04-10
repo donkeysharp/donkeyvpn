@@ -127,6 +127,7 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 	cmdProcessor.Register("/list", processor.NewListProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/settings", processor.NewSettingsProcessor(client, ssmClient, &cfg))
+	cmdProcessor.Register("/docs", processor.NewDocsProcessor(client))
 	cmdProcessor.RegisterFallback(processor.NewUnknowCommandProcessor(client))
 
 	return &DonkeyVPNApplication{

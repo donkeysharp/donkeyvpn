@@ -14,6 +14,7 @@ func getUsage() string {
 	__usage += "/delete vpn <vpn\\_id or all>\n"
 	__usage += "/delete peer <peer\\_ip>\n"
 	__usage += "/settings\n"
+	__usage += "/docs\n"
 	__usage += "/help\n"
 
 	return __usage
