@@ -1,42 +1,18 @@
 Donkey VPN - Ephemeral VPNs
 ===
 
-## Running Locally
-Run the following commands
-```
-$ go get
-$ source .env
-$ go run cmd/bot/main.go
-# This will run the application on port 8080
-```
+DonkeyVPN is a servereless Telegram-Powered Bot that manages the creation of ephemeral, low-cost VPNs.
 
-In order to test the Telegram bot by running it locally, you can create an Ngrok tunnel by running:
+![DonkeyVPN](docs/assets/donkeyvpn-03.png)
 
-```
-$ ngrok --url <free-ngrok-static-domain> http 8080
-# This will generate an Ngrok url you can add to your testing Telegram bot as webhook
-```
+## Manuals
+- [Installation](docs/installation.md)
+- [Running on Android](docs/android.md)
+- [Running on iOS](docs/ios.md)
+- [Running on Linux](docs/linux.md)
+- [Running on Windows (TODO)](docs/windows.md)
+- [Running on MacOS (TODO)](docs/macos.md)
 
-### Setting up your testing Telegram bot
-After you created a Telegram Bot (for testing purposes)
-Creating a webhook
-
-https://cec0-2800-cd0-1274-c000-224e-7b16-80a0-8556.ngrok-free.app/telegram/donkeyvpn/webhook
-
-
-payload.json
-```json
-{
-  "url": "WEBHOOK_URL",
-  "secret_token": "secret"
-}
-```
-
-```sh
-$ curl -H 'content-type: application/json' -XPOST --data @payload.json -sS https://api.telegram.org/bot${TELEGRAM_BOT_API_TOKEN}/setWebhook
-```
-
-
-## Resources
-- https://www.wireguard.com/quickstart/
-- https://dev.to/tangramvision/what-they-don-t-tell-you-about-setting-up-a-wireguard-vpn-1h2g
+## Roadmap
+- [ ] Create missing documentation for Windows and MacOS
+- [ ] Add an AWS cron job event to notify if there are instances that have been running for more than an hour.
