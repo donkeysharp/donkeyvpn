@@ -42,3 +42,11 @@ Once the installation script finished creating the resources and you executed th
 Go to your Telegram client and send the `/help` command to see the available options that you have to operate DonkeyVPN.
 
 Congratulations! Now you can create ephemeral and low cost ephemeral VPN servers.
+
+
+### Upgrading DonkeyVPN
+In order to upgrade to the latest version of DonkeyVPN, clone the repository, fetch the latest changes and run again the `install.sh` script
+
+```
+$ bash deploy/scripts/install.sh
+```
