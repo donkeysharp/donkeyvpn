@@ -1,7 +1,7 @@
-Donkey VPN - Ephemeral Wireguard VPNs
+Donkey VPN - Low-Cost Ephemeral Wireguard VPN Servers
 ===
 
-DonkeyVPN is a servereless Telegram-Powered Bot that manages the creation of ephemeral, low-cost Wireguard VPNs.
+DonkeyVPN is a servereless Telegram-Powered Bot that manages the creation of ephemeral, low-cost Wireguard VPN servers.
 
 ![DonkeyVPN](docs/assets/donkeyvpn-03.png)
 
