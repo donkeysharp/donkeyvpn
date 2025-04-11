@@ -30,7 +30,7 @@ If there is a VPN-related command such as `/create vpn <vpn_id>` or `/list vpn` 
 
 The two main workflows:
 
-VPN creation:
+### VPN creation:
 
 ```mermaid
 sequenceDiagram
@@ -60,7 +60,7 @@ sequenceDiagram
   end
 ```
 
-VPN Deletion
+### VPN Deletion
 ```mermaid
 sequenceDiagram
   participant User
@@ -91,5 +91,5 @@ sequenceDiagram
   end
 ```
 
-And finally the AWS architecture is as follows:
+### AWS architecture
 ![AWS Architecture](docs/assets/donkeyvpn-aws.png)
