@@ -74,7 +74,7 @@ resource "aws_launch_template" "default" {
     in_ssm_private_key = var.private_key_ssm_param
     in_ssm_public_key  = var.public_key_ssm_param
 
-    in_api_base_url    = trim(aws_apigatewayv2_stage.default.invoke_url, "/")
+    in_api_base_url    = local.api_base_url
     in_api_secret      = data.aws_ssm_parameter.webhook_secret.value
     in_use_route53     = var.hosted_zone != "none" ? "true" : "false"
   }))

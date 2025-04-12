@@ -96,3 +96,9 @@ variable "wireguard_ip_range" {
   description = "(optional) IP address range for wireguard VPN server"
   default     = "10.0.0.0/24"
 }
+
+variable "testing_userdata_api_base_url" {
+  type        = string
+  description = "(optional) Use this only when running in development mode, this will make VPN instances to call this url to register itself once ready."
+  default     = ""
+}

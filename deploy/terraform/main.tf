@@ -23,6 +23,9 @@ locals {
 
   account_id = data.aws_caller_identity.current.account_id
   region     = data.aws_region.current.name
+
+  # In case var.testing_userdata_api_base_url is not set, it will use API Gateway's url
+  api_base_url = var.testing_userdata_api_base_url == "" ? trim(aws_apigatewayv2_stage.default.invoke_url, "/") : var.testing_userdata_api_base_url
 }
 
 terraform {
