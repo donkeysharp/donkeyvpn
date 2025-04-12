@@ -12,7 +12,7 @@ DonkeyVPN is a servereless Telegram-Powered Bot that manages the creation of eph
 - [Running on Linux](docs/linux.md)
 - [Running on Windows (TODO)](docs/windows.md)
 - [Running on MacOS (TODO)](docs/macos.md)
-
+- [Local Development](docs/local-development.md)
 
 ## Roadmap
 - [ ] Make the changes acordingly to support testing, this is very important
