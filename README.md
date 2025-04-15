@@ -6,9 +6,9 @@ DonkeyVPN is a servereless Telegram-Powered Bot that manages the creation of eph
 ![DonkeyVPN](docs/assets/donkeyvpn-03.png)
 
 ## DonkeyVPN Demo
-Here is a demo I recorded on how to use DonkeyVPN after it was installed:
+Here is a [Youtube demo I recorded](https://youtu.be/IPp3d39Z-Zc) on how to use DonkeyVPN after it was installed:
 
-[![Watch the video](https://img.youtube.com/vi/IPp3d39Z-Zc/default.jpg)](https://youtu.be/IPp3d39Z-Zc)
+[![Watch the video](https://img.youtube.com/vi/IPp3d39Z-Zc/0.jpg)](https://youtu.be/IPp3d39Z-Zc)
 
 
 ## Manuals
