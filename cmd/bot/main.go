@@ -11,30 +11,10 @@ import (
 )
 
 func main() {
-	var telegramBotAPIToken string = os.Getenv("TELEGRAM_BOT_API_TOKEN")
-	var webhookSecret string = os.Getenv("WEBHOOK_SECRET")
-	var autoscalingGroupName string = os.Getenv("AUTOSCALING_GROUP_NAME")
-	var peersTableName string = os.Getenv("DYNAMODB_PEERS_TABLE_NAME")
-	var instancesTableName string = os.Getenv("DYNAMODB_INSTANCES_TABLE_NAME")
-	var runAsLambdaStr string = os.Getenv("RUN_AS_LAMBDA")
-	var publicKeySSMParam string = os.Getenv("SSM_PUBLIC_KEY")
-	var wireguardCidrRange string = os.Getenv("WIREGUARD_CIDR_RANGE")
-	var runAsLambda bool = false
-	if runAsLambdaStr == "true" {
-		runAsLambda = true
-	}
+	cfg := config.LoadConfigFromEnvVars()
 
 	e := echo.New()
-	app, err := app.NewApplication(config.DonkeyVPNConfig{
-		TelegramBotAPIToken:  telegramBotAPIToken,
-		WebhookSecret:        webhookSecret,
-		AutoscalingGroupName: autoscalingGroupName,
-		PeersTableName:       peersTableName,
-		InstancesTableName:   instancesTableName,
-		PublicKeySSMParam:    publicKeySSMParam,
-		WireguardCidrRange:   wireguardCidrRange,
-		RunAsLambda:          runAsLambda,
-	}, e)
+	app, err := app.NewApplication(cfg, e)
 
 	if err != nil {
 		log.Error("error while creating a new DonkeyVPN application")
