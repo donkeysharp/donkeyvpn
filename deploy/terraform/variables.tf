@@ -102,3 +102,9 @@ variable "testing_userdata_api_base_url" {
   description = "(optional) Use this only when running in development mode, this will make VPN instances to call this url to register itself once ready."
   default     = ""
 }
+
+variable "notifier_rate" {
+  type        = string
+  description = "(optional) Rate in which notifier will be executed"
+  default     = "cron(*/30 * * * ? *)"
+}

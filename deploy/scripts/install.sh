@@ -14,7 +14,9 @@ function build() {
     echo
     echo
     echo "Building Donkeyvpn binary..."
+    mkdir -p dist/notifier/
     go build -o dist/bootstrap cmd/bot/main.go
+    go build -o dist/notifier/bootstrap cmd/notifier/main.go
     echo "DonkeyVPN built successfully"
 }
 

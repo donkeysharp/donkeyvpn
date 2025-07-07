@@ -140,6 +140,13 @@ resource "aws_iam_policy" "donkeyvpn_permissions" {
         Resource = "arn:aws:logs:*:*:*"
       },
       {
+        Action   = [
+          "ec2:DescribeInstances",
+        ],
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
         Action = [
           "ssm:GetParameter"
         ]
