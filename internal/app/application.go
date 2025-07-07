@@ -119,7 +119,7 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 		return nil, err
 	}
 
-	vpnService := service.NewVPNService(asg, instancesTable)
+	vpnService := service.NewVPNService(asg, instancesTable, nil)
 	peerService := service.NewWireguardPeerService(peersTable, cfg.WireguardCidrRange)
 
 	cmdProcessor := processor.NewCommandProcessor()

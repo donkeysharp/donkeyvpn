@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
@@ -13,15 +14,17 @@ const STATUS_PENDING = "pending"
 const STATUS_READY = "ready"
 const MAX_INSTANCEs = 5
 
-func NewVPNService(asg *aws.AutoscalingGroup, table *aws.DynamoDB) *VPNService {
+func NewVPNService(asg *aws.AutoscalingGroup, table *aws.DynamoDB, ec2 *aws.EC2) *VPNService {
 	return &VPNService{
 		asg:   asg,
 		table: table,
+		ec2:   ec2,
 	}
 }
 
 type VPNService struct {
 	asg   *aws.AutoscalingGroup
+	ec2   *aws.EC2
 	table *aws.DynamoDB
 }
 
@@ -137,6 +140,34 @@ func (s *VPNService) ListArray() ([]models.VPNInstance, error) {
 		return nil, err
 	}
 	return instances, nil
+}
+
+func (s *VPNService) ListOlderThan(diff time.Duration) ([]models.VPNInstance, error) {
+	instances, err := s.ListArray()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]models.VPNInstance, 0, 0)
+	for _, instance := range instances {
+		if instance.Status != "success" {
+			continue
+		}
+		ec2Instance, err := s.ec2.DescribeInstance(instance.InstanceId)
+		if err != nil {
+			return nil, err
+		}
+		if ec2Instance.State.Name != "running" {
+			log.Infof("Instance %v is not in running state", instance.InstanceId)
+			continue
+		}
+
+		now := time.Now()
+		if now.Sub(*ec2Instance.LaunchTime) > diff {
+			result = append(result, instance)
+		}
+	}
+
+	return result, nil
 }
 
 func (s *VPNService) ListPending() ([]models.VPNInstance, error) {
