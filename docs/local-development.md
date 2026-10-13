@@ -73,4 +73,13 @@ $ bash deploy/scripts/install.sh terraform_apply
 
 No need to run the `/tmp/donkeyvpn-webhook-register.sh` script.
 
+## Running tests
+`go vet ./...` and `go test ./...` never touch AWS, so you can run them at any time.
+
+The DynamoDB integration test is behind the `integration` build tag and runs against a real table using your current AWS profile and region. It creates, updates, lists and deletes a single record, and it is skipped when `DONKEYVPN_IT_TABLE` is not set. Use a scratch table with a string hash key named `Id` and no range key, never the tables of a running DonkeyVPN installation.
+
+```
+$ DONKEYVPN_IT_TABLE=<scratch table> go test -tags integration ./internal/aws/...
+```
+
 Congratulations! Now you can start contributing to DonkeyVPN
