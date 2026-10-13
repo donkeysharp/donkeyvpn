@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -44,21 +42,16 @@ func (h *WebhookHandler) Handle(c echo.Context) error {
 
 	log.Infof("Body content: %s", content)
 
-	var tmp interface{}
-	err = json.Unmarshal(contentRaw, &tmp)
-	if err != nil {
-		log.Error("error unmarshalling request body")
-		return c.String(http.StatusAccepted, GenericErrorMessage)
+	update, err := telegram.ParseUpdate(contentRaw)
+	if err == telegram.ErrUnsupportedUpdate {
+		log.Info("ignoring update without a message")
+		return c.String(http.StatusOK, "Update ignored.")
 	}
-	updateRaw := tmp.(map[string]interface{})
-
-	update, err := telegram.NewUpdate(updateRaw)
 	if err != nil {
-		log.Error("error parsing body to create Update struct")
-		return c.String(http.StatusInternalServerError, GenericErrorMessage)
+		log.Errorf("error parsing body to create Update struct: %v", err)
+		return c.String(http.StatusOK, GenericErrorMessage)
 	}
 
-	fmt.Printf("%+v\n", update)
 	log.Info("sending answer to message")
 	h.CommandProcessor.Process(update)
 
