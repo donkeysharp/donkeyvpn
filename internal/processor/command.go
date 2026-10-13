@@ -13,16 +13,20 @@ const (
 	UnknowCommand = "unknown"
 )
 
-func NewCommandProcessor() *CommandProcessor {
+func NewCommandProcessor(authorizer *Authorizer, unauthorized Processor) *CommandProcessor {
 	return &CommandProcessor{
-		processors: make(map[Command]Processor),
-		fallback:   UnknowCommandProcessor{},
+		processors:   make(map[Command]Processor),
+		fallback:     UnknowCommandProcessor{},
+		authorizer:   authorizer,
+		unauthorized: unauthorized,
 	}
 }
 
 type CommandProcessor struct {
-	processors map[Command]Processor
-	fallback   Processor
+	processors   map[Command]Processor
+	fallback     Processor
+	authorizer   *Authorizer
+	unauthorized Processor
 }
 
 func (p *CommandProcessor) Register(command Command, processor Processor) {
@@ -34,6 +38,14 @@ func (p *CommandProcessor) RegisterFallback(processor Processor) {
 }
 
 func (p *CommandProcessor) Process(update *telegram.Update) {
+	if !p.authorizer.IsAllowed(update.Message.Chat.ChatId) {
+		err := p.unauthorized.Process(nil, update)
+		if err != nil {
+			log.Warnf("Error: %v", err)
+		}
+		return
+	}
+
 	command, args := parseCommand(update)
 	log.Infof("Processing command: %s with args: %v", command, args)
 	if processor, ok := p.processors[command]; ok {

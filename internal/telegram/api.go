@@ -19,7 +19,7 @@ func getBaseUrl(token string) string {
 	return fmt.Sprintf(BASE_URL, token)
 }
 
-type ChatId uint64
+type ChatId int64
 
 type replyMessage struct {
 	ChatId    ChatId `json:"chat_id"`
