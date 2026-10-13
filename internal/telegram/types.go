@@ -1,113 +1,88 @@
 package telegram
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 )
 
 type User struct {
-	Id        ChatId
-	FirstName string
-	LastName  string
-	Username  string
+	Id        ChatId `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
 }
 
 type Chat struct {
-	ChatId    ChatId
-	FirstName string
-	LastName  string
-	Username  string
-	Type      string
+	ChatId    ChatId `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
+	Type      string `json:"type"`
 }
 
 type MessageEntities struct {
-	Offset uint16
-	Length uint32
-	Type   string
+	Offset uint16 `json:"offset"`
+	Length uint32 `json:"length"`
+	Type   string `json:"type"`
 }
 
 type Message struct {
-	MessageId uint32
-	From      *User
-	Chat      *Chat
-	Date      time.Time
-	Text      string
-	Entities  []*MessageEntities
+	MessageId uint32             `json:"message_id"`
+	From      *User              `json:"from"`
+	Chat      *Chat              `json:"chat"`
+	Date      time.Time          `json:"date"`
+	Text      string             `json:"text"`
+	Entities  []*MessageEntities `json:"entities"`
 }
 
 type Update struct {
-	UpdateId uint32
-	Message  *Message
+	UpdateId uint32   `json:"update_id"`
+	Message  *Message `json:"message"`
 }
 
-func parseMessageEntities(entities []interface{}) []*MessageEntities {
+var ErrUnsupportedUpdate = fmt.Errorf("update does not contain a message")
 
-	result := make([]*MessageEntities, 0)
-
-	for i := 0; i < len(entities); i++ {
-		entity := entities[i].(map[string]interface{})
-		item := &MessageEntities{
-			Offset: uint16(entity["offset"].(float64)),
-			Length: uint32(entity["length"].(float64)),
-			Type:   entity["type"].(string),
-		}
-		result = append(result, item)
+// for custom fields such as date and empty text
+func (m *Message) UnmarshalJSON(data []byte) error {
+	type plain Message
+	aux := struct {
+		*plain
+		Date int64   `json:"date"`
+		Text *string `json:"text"`
+	}{plain: (*plain)(m)}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
 	}
 
-	return result
+	m.Date = time.Unix(aux.Date, 0)
+	m.Text = "/help" // defaults to /help
+	if aux.Text != nil {
+		m.Text = *aux.Text
+	}
+	// from is empty for messages sent to channels
+	if m.From == nil {
+		m.From = &User{}
+	}
+	if m.Entities == nil {
+		m.Entities = make([]*MessageEntities, 0)
+	}
+	return nil
 }
 
-func NewUpdate(body map[string]interface{}) (*Update, error) {
+func ParseUpdate(body []byte) (*Update, error) {
 	update := &Update{}
-	update.UpdateId = uint32(body["update_id"].(float64))
-	messageRaw := body["message"].(map[string]interface{})
-	userRaw := messageRaw["from"].(map[string]interface{})
-
-	user := &User{
-		Id: ChatId(userRaw["id"].(float64)),
+	if err := json.Unmarshal(body, update); err != nil {
+		return nil, fmt.Errorf("invalid update: %w", err)
 	}
-	if val, ok := userRaw["username"].(string); ok {
-		user.Username = val
+	if update.UpdateId == 0 {
+		return nil, fmt.Errorf("invalid update: missing update_id")
 	}
-	if val, ok := userRaw["fist_name"].(string); ok {
-		user.LastName = val
+	if update.Message == nil {
+		return nil, ErrUnsupportedUpdate
 	}
-	if val, ok := userRaw["last_name"].(string); ok {
-		user.LastName = val
+	if update.Message.Chat == nil || update.Message.Chat.ChatId == 0 {
+		return nil, fmt.Errorf("invalid update: missing message.chat.id")
 	}
-
-	chatRaw := messageRaw["chat"].(map[string]interface{})
-	chat := &Chat{
-		ChatId: ChatId(chatRaw["id"].(float64)),
-		Type:   chatRaw["type"].(string),
-	}
-	if val, ok := chatRaw["username"].(string); ok {
-		chat.Username = val
-	}
-	if val, ok := chatRaw["first_name"].(string); ok {
-		chat.FirstName = val
-	}
-	if val, ok := chatRaw["last_name"].(string); ok {
-		chat.LastName = val
-	}
-
-	entities := make([]*MessageEntities, 0)
-	if messageRaw["entities"] != nil {
-		entities = parseMessageEntities(messageRaw["entities"].([]interface{}))
-	}
-
-	messageText := "/help" // Use /help in case no text is in the message e.g. audio, image
-	if val, ok := messageRaw["text"].(string); ok {
-		messageText = val
-	}
-
-	update.Message = &Message{
-		MessageId: uint32(messageRaw["message_id"].(float64)),
-		From:      user,
-		Date:      time.Unix(int64(messageRaw["date"].(float64)), 0),
-		Chat:      chat,
-		Text:      messageText,
-		Entities:  entities,
-	}
-
 	return update, nil
 }
