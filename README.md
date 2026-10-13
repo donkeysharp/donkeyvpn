@@ -6,6 +6,8 @@ DonkeyVPN is a Telegram-Powered Bot that manages the creation of ephemeral, low-
 ![DonkeyVPN](docs/assets/donkeyvpn.png)
 ![DonkeyVPN](docs/assets/donkeyvpn-03.png)
 
+> **Access control:** only the Telegram chats listed in the `/donkeyvpn/allowedchatids` SSM parameter can use the bot. Any other chat just gets its chat id back. The list is read from SSM at startup, so adding chats needs no redeploy. Existing installs must create this parameter when upgrading. See [Installation](docs/installation.md#upgrading-to-the-chat-allowlist-breaking).
+
 ## DonkeyVPN Demo
 Here is a [Youtube demo I recorded](https://youtu.be/IPp3d39Z-Zc) on how to use DonkeyVPN after it was installed:
 
