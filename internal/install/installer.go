@@ -92,6 +92,11 @@ func (w *Wizard) generateSecrets() {
 
 	w.readSecret("/donkeyvpn/webhooksecret", "Webhook Secret Key")
 	w.readSecret("/donkeyvpn/telegrambotapikey", "Telegram Bot API Key")
+
+	fmt.Println("\nOnly the Telegram chats listed below can use the bot. Group chat ids are negative.")
+	fmt.Println("If you don't know your chat id yet, enter 0, finish the installation, send any")
+	fmt.Println("message to the bot (it replies with your chat id) and run the wizard again.")
+	w.readSecret("/donkeyvpn/allowedchatids", "Allowed Telegram chat ids (comma-separated)")
 }
 
 func (w *Wizard) generateWireguardKeys() {

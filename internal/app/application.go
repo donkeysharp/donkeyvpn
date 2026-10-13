@@ -122,7 +122,17 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 	vpnService := service.NewVPNService(asg, instancesTable, nil)
 	peerService := service.NewWireguardPeerService(peersTable, cfg.WireguardCidrRange)
 
-	cmdProcessor := processor.NewCommandProcessor()
+	authorizer := processor.NewAuthorizer(func() ([]int64, error) {
+		if cfg.AllowedChatIdsSSMParam == "" {
+			return nil, fmt.Errorf("SSM_ALLOWED_CHAT_IDS is not set")
+		}
+		value, err := ssmClient.GetParameter(cfg.AllowedChatIdsSSMParam, true)
+		if err != nil {
+			return nil, err
+		}
+		return config.ParseAllowedChatIds(value), nil
+	})
+	cmdProcessor := processor.NewCommandProcessor(authorizer, processor.NewUnauthorizedProcessor(client))
 	cmdProcessor.Register("/create", processor.NewCreateProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/list", processor.NewListProcessor(client, vpnService, peerService))
 	cmdProcessor.Register("/delete", processor.NewDeleteProcessor(client, vpnService, peerService))

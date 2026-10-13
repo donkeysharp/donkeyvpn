@@ -1,16 +1,40 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/labstack/gommon/log"
+)
 
 type DonkeyVPNConfig struct {
-	TelegramBotAPIToken  string
-	WebhookSecret        string
-	AutoscalingGroupName string
-	PeersTableName       string
-	InstancesTableName   string
-	PublicKeySSMParam    string
-	WireguardCidrRange   string
-	RunAsLambda          bool
+	TelegramBotAPIToken    string
+	WebhookSecret          string
+	AutoscalingGroupName   string
+	PeersTableName         string
+	InstancesTableName     string
+	PublicKeySSMParam      string
+	WireguardCidrRange     string
+	AllowedChatIdsSSMParam string
+	RunAsLambda            bool
+}
+
+func ParseAllowedChatIds(raw string) []int64 {
+	result := make([]int64, 0)
+	for _, entry := range strings.Split(raw, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		value, err := strconv.ParseInt(entry, 10, 64)
+		if err != nil {
+			log.Warnf("Ignoring invalid allowed chat id %q", entry)
+			continue
+		}
+		result = append(result, value)
+	}
+	return result
 }
 
 func LoadConfigFromEnvVars() DonkeyVPNConfig {
@@ -22,19 +46,21 @@ func LoadConfigFromEnvVars() DonkeyVPNConfig {
 	var runAsLambdaStr string = os.Getenv("RUN_AS_LAMBDA")
 	var publicKeySSMParam string = os.Getenv("SSM_PUBLIC_KEY")
 	var wireguardCidrRange string = os.Getenv("WIREGUARD_CIDR_RANGE")
+	var allowedChatIdsSSMParam string = os.Getenv("SSM_ALLOWED_CHAT_IDS")
 	var runAsLambda bool = false
 	if runAsLambdaStr == "true" {
 		runAsLambda = true
 	}
 
 	return DonkeyVPNConfig{
-		TelegramBotAPIToken:  telegramBotAPIToken,
-		WebhookSecret:        webhookSecret,
-		AutoscalingGroupName: autoscalingGroupName,
-		PeersTableName:       peersTableName,
-		InstancesTableName:   instancesTableName,
-		PublicKeySSMParam:    publicKeySSMParam,
-		WireguardCidrRange:   wireguardCidrRange,
-		RunAsLambda:          runAsLambda,
+		TelegramBotAPIToken:    telegramBotAPIToken,
+		WebhookSecret:          webhookSecret,
+		AutoscalingGroupName:   autoscalingGroupName,
+		PeersTableName:         peersTableName,
+		InstancesTableName:     instancesTableName,
+		PublicKeySSMParam:      publicKeySSMParam,
+		WireguardCidrRange:     wireguardCidrRange,
+		AllowedChatIdsSSMParam: allowedChatIdsSSMParam,
+		RunAsLambda:            runAsLambda,
 	}
 }

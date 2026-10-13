@@ -37,7 +37,7 @@ func (i VPNInstance) String() string {
 }
 
 func (i *VPNInstance) ChatIdValue() telegram.ChatId {
-	value, _ := strconv.ParseUint(i.ChatId, 10, 64)
+	value, _ := strconv.ParseInt(i.ChatId, 10, 64)
 	return telegram.ChatId(value)
 }
 
