@@ -74,6 +74,12 @@ variable "webhook_secret_ssm_param" {
   description = "SSM PArameter where webhook secret is located"
 }
 
+variable "allowed_chat_ids_ssm_param" {
+  type = string
+  default = "/donkeyvpn/allowedchatids"
+  description = "SSM Parameter with the comma-separated Telegram chat ids allowed to use the bot"
+}
+
 variable "kms_key_alias" {
   type = string
   default = "alias/aws/ssm"

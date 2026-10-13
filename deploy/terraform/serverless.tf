@@ -30,6 +30,7 @@ resource "aws_lambda_function" "golang_function" {
       DYNAMODB_INSTANCES_TABLE_NAME = aws_dynamodb_table.donkeyvpn_instances.name
       SSM_PUBLIC_KEY                = var.public_key_ssm_param
       WIREGUARD_CIDR_RANGE          = var.wireguard_ip_range
+      SSM_ALLOWED_CHAT_IDS          = var.allowed_chat_ids_ssm_param
     }
   }
 }
