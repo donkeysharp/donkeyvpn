@@ -15,9 +15,21 @@ function build() {
     echo
     echo "Building Donkeyvpn binary..."
     mkdir -p dist/notifier/
-    go build -o dist/bootstrap cmd/bot/main.go
-    go build -o dist/notifier/bootstrap cmd/notifier/main.go
+    GOOS=linux GOARCH=${LAMBDA_GOARCH:-amd64} CGO_ENABLED=0 go build -tags lambda.norpc -o dist/bootstrap cmd/bot/main.go
+    GOOS=linux GOARCH=${LAMBDA_GOARCH:-amd64} CGO_ENABLED=0 go build -tags lambda.norpc -o dist/notifier/bootstrap cmd/notifier/main.go
     echo "DonkeyVPN built successfully"
+}
+
+function check() {
+    go build ./...
+    go vet ./...
+    unformatted=$(gofmt -l .)
+    if [[ -n "$unformatted" ]]; then
+        echo "Files not formatted with gofmt:"
+        echo "$unformatted"
+        exit 1
+    fi
+    go test ./...
 }
 
 function terraform_apply() {

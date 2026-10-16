@@ -73,8 +73,10 @@ $ bash deploy/scripts/install.sh terraform_apply
 
 No need to run the `/tmp/donkeyvpn-webhook-register.sh` script.
 
-## Running tests
-`go vet ./...` and `go test ./...` never touch AWS, so you can run them at any time.
+## Building and running tests
+`make check` runs `go build`, `go vet`, a `gofmt` check and `go test ./...`. None of these touch AWS, so you can run them at any time. `make test` runs only the unit tests.
+
+`make build` builds the Lambda binaries into `dist/` for Linux `amd64`, whatever your machine is (macOS and ARM laptops included). Set `LAMBDA_GOARCH=arm64` only if the Lambda functions are switched to `arm64`.
 
 The DynamoDB integration test is behind the `integration` build tag and runs against a real table using your current AWS profile and region. It creates, updates, lists and deletes a single record, and it is skipped when `DONKEYVPN_IT_TABLE` is not set. Use a scratch table with a string hash key named `Id` and no range key, never the tables of a running DonkeyVPN installation.
 
