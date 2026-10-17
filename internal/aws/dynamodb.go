@@ -82,8 +82,8 @@ func (d *DynamoDB) UpdateRecord(item UpdateItem) error {
 		return err
 	}
 
-	log.Infof("Record updated successfully. Output metadata ", output.ResultMetadata)
-	log.Infof("Record updated successfully. Output attributes ", output.Attributes)
+	log.Infof("Record updated successfully. Output metadata %v", output.ResultMetadata)
+	log.Infof("Record updated successfully. Output attributes %v", output.Attributes)
 	return nil
 }
 
