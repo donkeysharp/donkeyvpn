@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	echoadapter "github.com/awslabs/aws-lambda-go-api-proxy/echo"
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/config"
 	"github.com/donkeysharp/donkeyvpn/internal/handler"
+	"github.com/donkeysharp/donkeyvpn/internal/lambdahttp"
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
@@ -27,8 +26,6 @@ type DonkeyVPNApplication struct {
 	vpnHandler     *handler.VPNHandler
 	peerHandler    *handler.PeerHandler
 }
-
-var echoLambda *echoadapter.EchoLambdaV2
 
 func (app *DonkeyVPNApplication) registerRoutes() {
 	api := app.e.Group("/v1/api")
@@ -65,10 +62,6 @@ func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.Han
 	}
 }
 
-func (app *DonkeyVPNApplication) HandlerV2(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-	return echoLambda.ProxyWithContext(ctx, req)
-}
-
 func (app *DonkeyVPNApplication) Start() {
 	app.registerRoutes()
 
@@ -76,10 +69,8 @@ func (app *DonkeyVPNApplication) Start() {
 		log.Info("Running as like executable application")
 		app.e.Logger.Fatal(app.e.Start(":8080"))
 	} else {
-		// Starting lambda handler with compatibility to Echo
 		log.Info("Running as a Lambda handler")
-		echoLambda = echoadapter.NewV2(app.e)
-		lambda.Start(app.HandlerV2)
+		lambda.Start(lambdahttp.Handler(app.e))
 	}
 
 }
