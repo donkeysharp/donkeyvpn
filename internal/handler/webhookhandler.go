@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"crypto/subtle"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
@@ -34,8 +34,8 @@ func (h *WebhookHandler) Handle(c echo.Context) error {
 	c.Response().Header().Add("Content-type", "application/json")
 	content := string(contentRaw)
 	requestToken := c.Request().Header.Get(TELEGRAM_WEBHOOK_SECRET_HEADER)
-	if strings.Compare(requestToken, h.WebhookSecret) != 0 {
-		log.Errorf("received a missing or invalid webhook secret: %v %v", requestToken, h.WebhookSecret)
+	if subtle.ConstantTimeCompare([]byte(requestToken), []byte(h.WebhookSecret)) != 1 {
+		log.Errorf("invalid or missing secret in %s header for %s", TELEGRAM_WEBHOOK_SECRET_HEADER, c.Request().URL.Path)
 		c.Response().Header().Add("content-type", "text/plain")
 		return c.String(http.StatusAccepted, GenericErrorMessage)
 	}

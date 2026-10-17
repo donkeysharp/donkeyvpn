@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 const testWebhookSecret = "test-secret"
@@ -20,6 +22,42 @@ type recordingProcessor struct {
 func (p *recordingProcessor) Process(args []string, update *telegram.Update) error {
 	p.calls++
 	return nil
+}
+
+func TestWebhookHandleDoesNotLogSecrets(t *testing.T) {
+	const suppliedToken = "supplied-token-value"
+	var logs bytes.Buffer
+	prev := log.Output()
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(prev) })
+
+	list := &recordingProcessor{}
+	cmd := processor.NewCommandProcessor(processor.NewAuthorizer(func() ([]int64, error) { return []int64{42}, nil }), list)
+	cmd.RegisterFallback(list)
+	h := &WebhookHandler{WebhookSecret: testWebhookSecret, CommandProcessor: cmd}
+
+	body := `{"update_id": 1, "message": {"message_id": 2, "date": 1700000000, "text": "/list vpn",
+		"from": {"id": 42}, "chat": {"id": 42, "type": "private"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/v1/api/telegram/donkeyvpn/webhook", strings.NewReader(body))
+	req.Header.Set(TELEGRAM_WEBHOOK_SECRET_HEADER, suppliedToken)
+	rec := httptest.NewRecorder()
+
+	if err := h.Handle(echo.New().NewContext(req, rec)); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusAccepted {
+		t.Errorf("expected status 202, got %d", rec.Code)
+	}
+	if list.calls != 0 {
+		t.Errorf("expected no command to run, got %d calls", list.calls)
+	}
+	out := logs.String()
+	if !strings.Contains(out, "invalid or missing secret") {
+		t.Errorf("expected the failure to be logged, got %q", out)
+	}
+	if strings.Contains(out, testWebhookSecret) || strings.Contains(out, suppliedToken) {
+		t.Errorf("log output contains a secret: %q", out)
+	}
 }
 
 func TestWebhookHandle(t *testing.T) {

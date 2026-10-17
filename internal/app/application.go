@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -50,13 +50,14 @@ func (app *DonkeyVPNApplication) registerRoutes() {
 
 func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		requestToken := c.Request().Header.Get("x-api-key")
+		header := "x-api-key"
+		requestToken := c.Request().Header.Get(header)
 		if requestToken == "" {
-			log.Warnf("x-api-key header is empty, testing with %f header", handler.TELEGRAM_WEBHOOK_SECRET_HEADER)
-			requestToken = c.Request().Header.Get(handler.TELEGRAM_WEBHOOK_SECRET_HEADER)
+			header = handler.TELEGRAM_WEBHOOK_SECRET_HEADER
+			requestToken = c.Request().Header.Get(header)
 		}
-		if strings.Compare(requestToken, app.webhookSecret) != 0 {
-			log.Warnf("received a missing or invalid webhook secret %v %v", requestToken, app.webhookSecret)
+		if subtle.ConstantTimeCompare([]byte(requestToken), []byte(app.webhookSecret)) != 1 {
+			log.Warnf("invalid or missing secret in %s header for %s", header, c.Request().URL.Path)
 			c.Response().Header().Add("content-type", "text/plain")
 			return c.JSON(http.StatusUnauthorized, "Invalid token, set the correct token in x-api-key header")
 		}
