@@ -7,7 +7,7 @@ import (
 	"github.com/donkeysharp/donkeyvpn/internal/models"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/labstack/gommon/log"
 )
 
@@ -37,7 +37,7 @@ func (r *NotificationRequest) ToModel() interface{} {
 	}
 }
 
-func (h *VPNHandler) GetPendingId(c echo.Context) error {
+func (h *VPNHandler) GetPendingId(c *echo.Context) error {
 	instances, err := h.VPNSvc.ListPending()
 	if err != nil {
 		log.Errorf("Error retrieving pending instances: %v", err.Error())
@@ -46,7 +46,7 @@ func (h *VPNHandler) GetPendingId(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, instances)
 }
 
-func (h *VPNHandler) Notify(c echo.Context) error {
+func (h *VPNHandler) Notify(c *echo.Context) error {
 	vpnId := c.Param("vpnId")
 	var req NotificationRequest
 	if err := c.Bind(&req); err != nil {
@@ -82,7 +82,7 @@ func (h *VPNHandler) Notify(c echo.Context) error {
 	})
 }
 
-func (h *VPNHandler) Ping(c echo.Context) error {
+func (h *VPNHandler) Ping(c *echo.Context) error {
 	log.Info("Ping event")
 	return c.JSON(http.StatusAccepted, JSONObj{
 		"message": "Pong from donkeyvpn",

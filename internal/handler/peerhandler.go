@@ -6,7 +6,7 @@ import (
 
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/labstack/gommon/log"
 )
 
@@ -15,7 +15,7 @@ type PeerHandler struct {
 	PeersTable    *aws.DynamoDB
 }
 
-func (p *PeerHandler) List(c echo.Context) error {
+func (p *PeerHandler) List(c *echo.Context) error {
 	result, err := p.PeersTable.ListRecords()
 	if err != nil {
 		log.Errorf("error listing peers %v", err)

@@ -15,7 +15,7 @@ import (
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -281,7 +281,7 @@ func TestRoutes(t *testing.T) {
 			status: http.StatusMethodNotAllowed,
 		},
 		{
-			// Echo v4 answers 404 here, not 405: Group.Use registers a
+			// Echo answers 404 here, not 405: Group.Use registers a
 			// catch-all route for the group that matches first.
 			name:    "wrong method on an authenticated route",
 			method:  http.MethodGet,
@@ -317,5 +317,22 @@ func TestRoutes(t *testing.T) {
 				tc.check(t, rec.Body.String(), fake, list)
 			}
 		})
+	}
+}
+
+func TestHandlerPanicReturns500(t *testing.T) {
+	app, _, _ := newTestApp(t)
+	app.e.GET("/test/panic", func(c *echo.Context) error { panic("boom") })
+
+	rec := httptest.NewRecorder()
+	app.e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/test/panic", nil))
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", rec.Code)
+	}
+
+	rec = httptest.NewRecorder()
+	app.e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/donkeyvpn/ping", nil))
+	if rec.Code != http.StatusAccepted {
+		t.Errorf("expected ping to succeed after a panic, got %d", rec.Code)
 	}
 }
