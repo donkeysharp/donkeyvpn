@@ -25,17 +25,9 @@ You can start the application by running the following command:
 ```
 $ go run cmd/bot/main.go
 
-{"time":"2025-04-11T21:49:58.61093766-04:00","level":"INFO","prefix":"-","file":"application.go","line":"75","message":"Running as like executable application"}
-
-   ____    __
-  / __/___/ /  ___
- / _// __/ _ \/ _ \
-/___/\__/_//_/\___/ v4.12.0
-High performance, minimalist Go web framework
-https://echo.labstack.com
-____________________________________O/_______
-                                    O\
-⇨ http server started on [::]:8080
+{"time":"2026-10-31T16:04:05.146761493-04:00","level":"INFO","prefix":"-","file":"application.go","line":"74","message":"Running as like executable application"}
+{"time":"2026-10-31T16:04:05.147151191-04:00","level":"INFO","msg":"Echo (v5.4.4). High performance, minimalist Go web framework https://echo.labstack.com","version":"5.4.4"}
+{"time":"2026-10-31T16:04:05.147168198-04:00","level":"INFO","msg":"http(s) server started","address":"[::]:8080"}
 ```
 
 ## Updating Telegram bot to use Ngrok's url as webhook
