@@ -3,13 +3,12 @@ package processor
 import (
 	"fmt"
 
-	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/config"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
-func NewSettingsProcessor(client *telegram.Client, ssm *aws.SSM, cfg *config.DonkeyVPNConfig) *SettingsProcessor {
+func NewSettingsProcessor(client MessageSender, ssm ParameterReader, cfg *config.DonkeyVPNConfig) *SettingsProcessor {
 	return &SettingsProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
@@ -21,7 +20,7 @@ func NewSettingsProcessor(client *telegram.Client, ssm *aws.SSM, cfg *config.Don
 
 type SettingsProcessor struct {
 	ProcessorShared
-	ssm    *aws.SSM
+	ssm    ParameterReader
 	config *config.DonkeyVPNConfig
 }
 

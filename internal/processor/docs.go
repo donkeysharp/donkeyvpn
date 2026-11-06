@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func NewDocsProcessor(client *telegram.Client) *DocsProcessor {
+func NewDocsProcessor(client MessageSender) *DocsProcessor {
 	return &DocsProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,

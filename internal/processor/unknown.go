@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func NewUnknowCommandProcessor(client *telegram.Client) UnknowCommandProcessor {
+func NewUnknowCommandProcessor(client MessageSender) UnknowCommandProcessor {
 	return UnknowCommandProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,

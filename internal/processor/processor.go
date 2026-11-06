@@ -6,7 +6,7 @@ import (
 )
 
 type ProcessorShared struct {
-	Client *telegram.Client
+	Client MessageSender
 }
 
 type Processor interface {

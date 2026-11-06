@@ -57,7 +57,7 @@ func (a *Authorizer) IsAllowed(chatId telegram.ChatId) bool {
 	return ok
 }
 
-func NewUnauthorizedProcessor(client *telegram.Client) UnauthorizedProcessor {
+func NewUnauthorizedProcessor(client MessageSender) UnauthorizedProcessor {
 	return UnauthorizedProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
