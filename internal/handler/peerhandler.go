@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/gommon/log"
@@ -12,7 +11,7 @@ import (
 
 type PeerHandler struct {
 	WebhookSecret string
-	PeersTable    *aws.DynamoDB
+	PeersTable    RecordLister
 }
 
 func (p *PeerHandler) List(c *echo.Context) error {

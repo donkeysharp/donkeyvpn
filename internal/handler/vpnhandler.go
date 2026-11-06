@@ -15,8 +15,8 @@ type JSONObj map[string]interface{}
 
 type VPNHandler struct {
 	WebhookSecret  string
-	VPNSvc         *service.VPNService
-	TelegramClient *telegram.Client
+	VPNSvc         VPNService
+	TelegramClient MessageSender
 }
 
 type NotificationRequest struct {
