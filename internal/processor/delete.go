@@ -3,14 +3,13 @@ package processor
 import (
 	"fmt"
 
-	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
 const DELETE_ALL_INSTANCES = "all"
 
-func NewDeleteProcessor(client *telegram.Client, vpnSvc *service.VPNService, peerSvc *service.PeerService) DeleteProcessor {
+func NewDeleteProcessor(client MessageSender, vpnSvc VPNService, peerSvc PeerService) DeleteProcessor {
 	return DeleteProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
@@ -22,8 +21,8 @@ func NewDeleteProcessor(client *telegram.Client, vpnSvc *service.VPNService, pee
 
 type DeleteProcessor struct {
 	ProcessorShared
-	vpnSvc  *service.VPNService
-	peerSvc *service.PeerService
+	vpnSvc  VPNService
+	peerSvc PeerService
 }
 
 func (p DeleteProcessor) Process(args []string, update *telegram.Update) error {

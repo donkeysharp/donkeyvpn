@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func NewCreateProcessor(client *telegram.Client, vpnSvc *service.VPNService, peerSvc *service.PeerService) CreateProcessor {
+func NewCreateProcessor(client MessageSender, vpnSvc VPNService, peerSvc PeerService) CreateProcessor {
 	return CreateProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
@@ -21,8 +21,8 @@ func NewCreateProcessor(client *telegram.Client, vpnSvc *service.VPNService, pee
 
 type CreateProcessor struct {
 	ProcessorShared
-	vpnSvc  *service.VPNService
-	peerSvc *service.PeerService
+	vpnSvc  VPNService
+	peerSvc PeerService
 }
 
 func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
@@ -72,7 +72,7 @@ func (p CreateProcessor) CreatePeer(ipAddress, publicKey, username string, updat
 		}
 		if err == service.ErrInvalidIPAddress {
 			p.SendMessage(
-				fmt.Sprintf("❌ Invalid IP address, it must be in the %v range", p.peerSvc.CidrRange),
+				fmt.Sprintf("❌ Invalid IP address, it must be in the %v range", p.peerSvc.CidrRange()),
 				update,
 			)
 			return err

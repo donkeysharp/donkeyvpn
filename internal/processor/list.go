@@ -3,12 +3,11 @@ package processor
 import (
 	"fmt"
 
-	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
 )
 
-func NewListProcessor(client *telegram.Client, vpnService *service.VPNService, peerService *service.PeerService) ListProcessor {
+func NewListProcessor(client MessageSender, vpnService VPNService, peerService PeerService) ListProcessor {
 	return ListProcessor{
 		ProcessorShared: ProcessorShared{
 			Client: client,
@@ -20,8 +19,8 @@ func NewListProcessor(client *telegram.Client, vpnService *service.VPNService, p
 
 type ListProcessor struct {
 	ProcessorShared
-	vpnService  *service.VPNService
-	peerService *service.PeerService
+	vpnService  VPNService
+	peerService PeerService
 }
 
 func (p ListProcessor) ListVPNs(update *telegram.Update) error {
