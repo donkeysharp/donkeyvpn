@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/donkeysharp/donkeyvpn/internal/aws"
 	"github.com/donkeysharp/donkeyvpn/internal/models"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
 	"github.com/labstack/gommon/log"
@@ -14,7 +13,9 @@ const STATUS_PENDING = "pending"
 const STATUS_READY = "ready"
 const MAX_INSTANCEs = 5
 
-func NewVPNService(asg *aws.AutoscalingGroup, table *aws.DynamoDB, ec2 *aws.EC2) *VPNService {
+// asg or ec2 can be nil when the caller never uses the methods that need them
+// (the notifier has no ASG, the bot does not describe EC2 instances).
+func NewVPNService(asg scalingGroup, table instanceTable, ec2 instanceDescriber) *VPNService {
 	return &VPNService{
 		asg:   asg,
 		table: table,
@@ -23,9 +24,9 @@ func NewVPNService(asg *aws.AutoscalingGroup, table *aws.DynamoDB, ec2 *aws.EC2)
 }
 
 type VPNService struct {
-	asg   *aws.AutoscalingGroup
-	ec2   *aws.EC2
-	table *aws.DynamoDB
+	asg   scalingGroup
+	ec2   instanceDescriber
+	table instanceTable
 }
 
 var ErrMaxCapacity = fmt.Errorf("ASG reached its maximum of instances")
@@ -101,7 +102,7 @@ func (s *VPNService) Create(telegramChatId telegram.ChatId) (bool, error) {
 	}
 	log.Infof("ASG desiredCapacity: %d, maxSize: %d", *asg.DesiredCapacity, *asg.MaxSize)
 	if *asg.DesiredCapacity == *asg.MaxSize {
-		log.Warnf(ErrMaxCapacity.Error())
+		log.Warn(ErrMaxCapacity.Error())
 		return false, ErrMaxCapacity
 	}
 
