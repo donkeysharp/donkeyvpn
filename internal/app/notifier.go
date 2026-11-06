@@ -12,9 +12,17 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+// MessageSender delivers a message to a Telegram chat. *telegram.Client
+// implements it; tests use testutil.RecordingSender.
+type MessageSender interface {
+	SendMessage(message string, chat *telegram.Chat) error
+}
+
+var _ MessageSender = (*telegram.Client)(nil)
+
 type DonkeyVPNNotifierApp struct {
 	VPNService     *service.VPNService
-	TelegramClient *telegram.Client
+	TelegramClient MessageSender
 }
 
 func NewNotifierApplication(cfg config.DonkeyVPNConfig, tgClient *telegram.Client) (*DonkeyVPNNotifierApp, error) {
