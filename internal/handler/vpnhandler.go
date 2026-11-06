@@ -48,7 +48,7 @@ func (h *VPNHandler) GetPendingId(c echo.Context) error {
 
 func (h *VPNHandler) Notify(c echo.Context) error {
 	vpnId := c.Param("vpnId")
-	var req *NotificationRequest = new(NotificationRequest)
+	var req NotificationRequest
 	if err := c.Bind(&req); err != nil {
 		log.Errorf("Could not process %v", err.Error())
 		return c.JSON(http.StatusBadRequest, JSONObj{"error": GenericErrorMessage})
