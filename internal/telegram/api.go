@@ -11,13 +11,9 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const (
-	BASE_URL = "https://api.telegram.org/bot%s"
-)
-
-func getBaseUrl(token string) string {
-	return fmt.Sprintf(BASE_URL, token)
-}
+// DefaultBaseURL is the Telegram Bot API endpoint NewClient uses unless
+// WithBaseURL overrides it.
+const DefaultBaseURL = "https://api.telegram.org"
 
 type ChatId int64
 
@@ -29,7 +25,23 @@ type replyMessage struct {
 
 type Client struct {
 	BotAPIToken string
+	baseURL     string
 	client      http.Client
+}
+
+// Option configures a Client created by NewClient.
+type Option func(*Client)
+
+// WithBaseURL sends API calls to baseURL instead of DefaultBaseURL, e.g. an
+// httptest.Server in tests.
+func WithBaseURL(baseURL string) Option {
+	return func(c *Client) {
+		c.baseURL = strings.TrimRight(baseURL, "/")
+	}
+}
+
+func (c *Client) methodURL(method string) string {
+	return fmt.Sprintf("%s/bot%s/%s", c.baseURL, c.BotAPIToken, method)
 }
 
 func escapeMessage(message string) string {
@@ -51,7 +63,7 @@ func (c *Client) SendMessage(message string, chat *Chat) error {
 		log.Error("Could not marshal replyMessage struct")
 		return err
 	}
-	url := getBaseUrl(c.BotAPIToken + "/sendMessage")
+	url := c.methodURL("sendMessage")
 	log.Infof("Sending message to telegram. ChatId: %v Message: %v", chat.ChatId, escapedMessage)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(buf))
 	if err != nil {
@@ -80,10 +92,14 @@ func (c *Client) SendErrorMessage(chat *Chat) error {
 	return c.SendMessage(message, chat)
 }
 
-func NewClient(token string) *Client {
+func NewClient(token string, opts ...Option) *Client {
 	c := &Client{
 		BotAPIToken: token,
+		baseURL:     DefaultBaseURL,
 		client:      http.Client{},
+	}
+	for _, opt := range opts {
+		opt(c)
 	}
 
 	return c
