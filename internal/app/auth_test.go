@@ -83,3 +83,37 @@ func TestSecretBasedAuthAcceptsValidSecret(t *testing.T) {
 		})
 	}
 }
+
+func TestSecretBasedAuthRejectsMissingSecret(t *testing.T) {
+	for _, header := range []string{"x-api-key", handler.TELEGRAM_WEBHOOK_SECRET_HEADER} {
+		t.Run("empty "+header, func(t *testing.T) {
+			app := &DonkeyVPNApplication{webhookSecret: configuredSecret}
+			e := echo.New()
+			e.Use(app.SecretBasedAuth)
+			e.GET("/v1/api/test", func(c *echo.Context) error { return c.NoContent(http.StatusOK) })
+
+			req := httptest.NewRequest(http.MethodGet, "/v1/api/test", nil)
+			req.Header.Set(header, "")
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusUnauthorized {
+				t.Errorf("expected status 401, got %d", rec.Code)
+			}
+		})
+	}
+}
+
+func TestSecretBasedAuthSkipsPathsOutsideAPI(t *testing.T) {
+	app := &DonkeyVPNApplication{webhookSecret: configuredSecret}
+	e := echo.New()
+	e.Use(app.SecretBasedAuth)
+	for _, path := range []string{"/donkeyvpn/ping", "/v1/apix"} {
+		e.GET(path, func(c *echo.Context) error { return c.NoContent(http.StatusOK) })
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Errorf("%s: expected status 200 without a secret, got %d", path, rec.Code)
+		}
+	}
+}
