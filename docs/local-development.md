@@ -68,6 +68,29 @@ No need to run the `/tmp/donkeyvpn-webhook-register.sh` script.
 ## Building and running tests
 `make check` runs `go build`, `go vet`, a `gofmt` check and `go test ./...`. None of these touch AWS, so you can run them at any time. `make test` runs only the unit tests.
 
+### Unit tests and fakes
+Unit tests never call AWS or Telegram. Services, processors and handlers depend on small interfaces declared in their own package (for example `service.instanceTable` or `processor.MessageSender`) instead of the concrete clients in `internal/aws` and `internal/telegram`, so tests can pass in the in-memory fakes from `internal/testutil`:
+
+| Fake | Stands in for | Notes |
+|---|---|---|
+| `FakeTable` | `*aws.DynamoDB` | Stores attribute maps keyed by primary key, so data goes through the real marshalling in `internal/models`. Supports the `SET #a = :a` updates and `#a = :a` filters the models generate. `ListRecords` returns items sorted by key. |
+| `FakeScalingGroup` | `*aws.AutoscalingGroup` | Holds `DesiredCapacity`/`MaxSize` and records `CapacityUpdates` and `DeletedInstances`. |
+| `FakeInstanceDescriber` | `*aws.EC2` | Returns instances from a map. Build them with `NewEC2Instance(id, state, launchTime)`. |
+| `RecordingSender` | `*telegram.Client` | Records every `SendMessage` call (text before MarkdownV2 escaping) and returns them from `Messages()`. |
+
+Every fake has an `Err` field: when it is set, each method returns that error. For example:
+
+```go
+table := testutil.NewFakeTable()
+asg := &testutil.FakeScalingGroup{DesiredCapacity: 1, MaxSize: 5}
+svc := service.NewVPNService(asg, table, nil)
+created, err := svc.Create(42)
+```
+
+To test code that calls the Telegram HTTP API itself, point a client at an `httptest.Server` with `telegram.NewClient(token, telegram.WithBaseURL(server.URL))`.
+
+Run the unit tests with `go test ./...` (or `make test`). They need no AWS credentials and no network access.
+
 `make build` builds the Lambda binaries into `dist/` for Linux `amd64`, whatever your machine is (macOS and ARM laptops included). Set `LAMBDA_GOARCH=arm64` only if the Lambda functions are switched to `arm64`.
 
 The DynamoDB integration test is behind the `integration` build tag and runs against a real table using your current AWS profile and region. It creates, updates, lists and deletes a single record, and it is skipped when `DONKEYVPN_IT_TABLE` is not set. Use a scratch table with a string hash key named `Id` and no range key, never the tables of a running DonkeyVPN installation.
