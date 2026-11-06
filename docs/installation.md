@@ -3,7 +3,7 @@ Installation
 
 ## Requirements
 Before running the installation script, make sure you have the following requirements ready:
-- Go 1.22+ properly installed.
+- Go 1.25+ properly installed (developed with 1.27).
 - Terraform 1.9+ installed.
 - Your AWS credentials and profile configured.
 
