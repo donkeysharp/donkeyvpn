@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
@@ -132,5 +133,28 @@ func TestUnauthorizedMessage(t *testing.T) {
 	expected = "⛔ You are not authorized to use this bot. Your chat id is `-100123`."
 	if got := unauthorizedMessage(-100123); got != expected {
 		t.Errorf("expected %q, got %q", expected, got)
+	}
+}
+
+func TestParseCommand(t *testing.T) {
+	cases := []struct {
+		text    string
+		command Command
+		args    []string
+	}{
+		{text: "/list vpn", command: "/list", args: []string{"vpn"}},
+		{text: "/create peer 10.0.0.2 abc=", command: "/create", args: []string{"peer", "10.0.0.2", "abc="}},
+		{text: "  /delete\tvpn   vpn001 \n", command: "/delete", args: []string{"vpn", "vpn001"}},
+		{text: "/help", command: "/help"},
+		{text: "", command: UnknowCommand},
+		{text: "   ", command: UnknowCommand},
+	}
+	for _, tc := range cases {
+		t.Run(tc.text, func(t *testing.T) {
+			command, args := parseCommand(newTestUpdate(1, tc.text))
+			if command != tc.command || !slices.Equal(args, tc.args) {
+				t.Errorf("expected %q %q, got %q %q", tc.command, tc.args, command, args)
+			}
+		})
 	}
 }
