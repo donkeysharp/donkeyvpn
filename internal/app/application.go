@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"crypto/subtle"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -14,7 +15,8 @@ import (
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/service"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	"github.com/labstack/gommon/log"
 )
 
@@ -28,6 +30,9 @@ type DonkeyVPNApplication struct {
 }
 
 func (app *DonkeyVPNApplication) registerRoutes() {
+	// A handler panic becomes a 500 instead of failing the Lambda invocation
+	app.e.Use(middleware.Recover())
+
 	api := app.e.Group("/v1/api")
 
 	// Authentication
@@ -46,7 +51,7 @@ func (app *DonkeyVPNApplication) registerRoutes() {
 }
 
 func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		header := "x-api-key"
 		requestToken := c.Request().Header.Get(header)
 		if requestToken == "" {
@@ -67,7 +72,9 @@ func (app *DonkeyVPNApplication) Start() {
 
 	if !app.runAsLambda {
 		log.Info("Running as like executable application")
-		app.e.Logger.Fatal(app.e.Start(":8080"))
+		if err := app.e.Start(":8080"); err != nil {
+			log.Fatalf("http server stopped: %v", err)
+		}
 	} else {
 		log.Info("Running as a Lambda handler")
 		lambda.Start(lambdahttp.Handler(app.e))
@@ -79,13 +86,13 @@ func NewApplication(cfg config.DonkeyVPNConfig, e *echo.Echo) (*DonkeyVPNApplica
 	if cfg.TelegramBotAPIToken == "" {
 		msg := "missing telegram bot API token"
 		log.Error(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	if cfg.WebhookSecret == "" {
 		msg := "missing webhook secret config"
 		log.Error(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	client := telegram.NewClient(cfg.TelegramBotAPIToken)

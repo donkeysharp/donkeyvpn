@@ -7,7 +7,7 @@ import (
 
 	"github.com/donkeysharp/donkeyvpn/internal/processor"
 	"github.com/donkeysharp/donkeyvpn/internal/telegram"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/labstack/gommon/log"
 )
 
@@ -21,7 +21,7 @@ type WebhookHandler struct {
 	CommandProcessor *processor.CommandProcessor
 }
 
-func (h *WebhookHandler) Handle(c echo.Context) error {
+func (h *WebhookHandler) Handle(c *echo.Context) error {
 	contentRaw, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		log.Error("could not load body reader")

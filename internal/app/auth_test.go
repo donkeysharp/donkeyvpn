@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/donkeysharp/donkeyvpn/internal/handler"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/labstack/gommon/log"
 )
 
@@ -69,7 +69,7 @@ func TestSecretBasedAuthAcceptsValidSecret(t *testing.T) {
 		t.Run(header, func(t *testing.T) {
 			app := &DonkeyVPNApplication{webhookSecret: configuredSecret}
 			e := echo.New()
-			e.GET("/", func(c echo.Context) error { return c.NoContent(http.StatusOK) }, app.SecretBasedAuth)
+			e.GET("/", func(c *echo.Context) error { return c.NoContent(http.StatusOK) }, app.SecretBasedAuth)
 
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.Header.Set(strings.ToLower(header), configuredSecret)

@@ -1,12 +1,13 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/donkeysharp/donkeyvpn/internal/app"
 	"github.com/donkeysharp/donkeyvpn/internal/config"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/labstack/gommon/log"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	cfg := config.LoadConfigFromEnvVars()
 
 	e := echo.New()
+	e.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	app, err := app.NewApplication(cfg, e)
 
 	if err != nil {
