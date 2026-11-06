@@ -29,16 +29,17 @@ func (p CreateProcessor) CreateVPN(update *telegram.Update) error {
 	result, err := p.vpnSvc.Create(update.Message.Chat.ChatId)
 	if err != nil {
 		log.Error("VPN instance creation failed")
-		if err == service.ErrMaxCapacity {
+		switch err {
+		case service.ErrMaxCapacity:
 			msg := "⚠ Maximum capacity reached, cannot create more instances."
 			p.SendMessage(msg, update)
 			return err
-		} else if err == service.ErrVPNInstanceCreating {
+		case service.ErrVPNInstanceCreating:
 			msg := "⚠ There is an instance that currently is being created."
 			msg += " Wait for it to finish before creating a new one."
 			p.SendMessage(msg, update)
 			return err
-		} else {
+		default:
 			log.Errorf("Error while creating vpn instance: %v", err.Error())
 			p.SendMessage("❌ VPN instance creation failed", update)
 			return err
