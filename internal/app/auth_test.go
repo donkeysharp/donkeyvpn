@@ -69,9 +69,10 @@ func TestSecretBasedAuthAcceptsValidSecret(t *testing.T) {
 		t.Run(header, func(t *testing.T) {
 			app := &DonkeyVPNApplication{webhookSecret: configuredSecret}
 			e := echo.New()
-			e.GET("/", func(c *echo.Context) error { return c.NoContent(http.StatusOK) }, app.SecretBasedAuth)
+			e.Use(app.SecretBasedAuth)
+			e.GET("/v1/api/test", func(c *echo.Context) error { return c.NoContent(http.StatusOK) })
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/v1/api/test", nil)
 			req.Header.Set(strings.ToLower(header), configuredSecret)
 			rec := httptest.NewRecorder()
 			e.ServeHTTP(rec, req)

@@ -281,18 +281,47 @@ func TestRoutes(t *testing.T) {
 			status: http.StatusMethodNotAllowed,
 		},
 		{
-			// Echo answers 404 here, not 405: Group.Use registers a
-			// catch-all route for the group that matches first.
-			name:    "wrong method on an authenticated route",
+			name:    "405 wrong method on an authenticated route",
 			method:  http.MethodGet,
 			path:    "/v1/api/vpn/notify/vpn002",
 			headers: map[string]string{"x-api-key": configuredSecret},
-			status:  http.StatusNotFound,
+			status:  http.StatusMethodNotAllowed,
 			check: func(t *testing.T, _ string, fake *fakeDynamoDB, _ *recordingProcessor) {
 				if len(fake.calls) != 0 {
 					t.Errorf("expected no handler to run, got %d DynamoDB calls", len(fake.calls))
 				}
 			},
+		},
+		{
+			name:   "401 before 405 without a secret",
+			method: http.MethodGet,
+			path:   "/v1/api/vpn/notify/vpn002",
+			status: http.StatusUnauthorized,
+		},
+		{
+			name:    "404 unknown api path",
+			method:  http.MethodGet,
+			path:    "/v1/api/does-not-exist",
+			headers: map[string]string{"x-api-key": configuredSecret},
+			status:  http.StatusNotFound,
+		},
+		{
+			name:   "401 before 404 without a secret",
+			method: http.MethodGet,
+			path:   "/v1/api/does-not-exist",
+			status: http.StatusUnauthorized,
+		},
+		{
+			name:   "api prefix itself requires a secret",
+			method: http.MethodGet,
+			path:   "/v1/api",
+			status: http.StatusUnauthorized,
+		},
+		{
+			name:   "similar prefix is not an api path",
+			method: http.MethodGet,
+			path:   "/v1/apiary",
+			status: http.StatusNotFound,
 		},
 	}
 

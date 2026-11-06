@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/donkeysharp/donkeyvpn/internal/aws"
@@ -29,14 +30,18 @@ type DonkeyVPNApplication struct {
 	peerHandler    *handler.PeerHandler
 }
 
+const apiPrefix = "/v1/api"
+
 func (app *DonkeyVPNApplication) registerRoutes() {
 	// A handler panic becomes a 500 instead of failing the Lambda invocation
 	app.e.Use(middleware.Recover())
 
-	api := app.e.Group("/v1/api")
+	// Authentication for /v1/api. It is registered at the root rather than on
+	// the group: group middleware makes Echo add a catch-all route, which turns
+	// a wrong method on a known path into 404 instead of 405.
+	app.e.Use(app.SecretBasedAuth)
 
-	// Authentication
-	api.Use(app.SecretBasedAuth)
+	api := app.e.Group(apiPrefix)
 	// Telegram bot will send all messages to this endpoint
 	api.POST("/telegram/donkeyvpn/webhook", app.webhookHandler.Handle)
 	// Used by user-data script to retrieve the vpn instance that is being created
@@ -52,6 +57,9 @@ func (app *DonkeyVPNApplication) registerRoutes() {
 
 func (app *DonkeyVPNApplication) SecretBasedAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
+		if path := c.Request().URL.Path; path != apiPrefix && !strings.HasPrefix(path, apiPrefix+"/") {
+			return next(c)
+		}
 		header := "x-api-key"
 		requestToken := c.Request().Header.Get(header)
 		if requestToken == "" {
