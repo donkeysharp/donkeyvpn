@@ -21,7 +21,6 @@ type DynamoDB struct {
 type DynamoDBItem interface {
 	ToItem() map[string]types.AttributeValue
 	PrimaryKey() map[string]types.AttributeValue
-	RangeKey() map[string]types.AttributeValue
 	String() string
 }
 

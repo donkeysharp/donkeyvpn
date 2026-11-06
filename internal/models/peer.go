@@ -40,12 +40,6 @@ func (p *WireguardPeer) PrimaryKey() map[string]types.AttributeValue {
 	}
 }
 
-func (p *WireguardPeer) RangeKey() map[string]types.AttributeValue {
-	return map[string]types.AttributeValue{
-		"PublicKey": &types.AttributeValueMemberS{Value: p.PublicKey},
-	}
-}
-
 func DynamoItemsToWireguardPeers(items []map[string]types.AttributeValue) ([]WireguardPeer, error) {
 	var peers []WireguardPeer
 	err := attributevalue.UnmarshalListOfMaps(items, &peers)

@@ -35,12 +35,6 @@ func (i *TestItem) PrimaryKey() map[string]types.AttributeValue {
 	}
 }
 
-func (i *TestItem) RangeKey() map[string]types.AttributeValue {
-	return map[string]types.AttributeValue{
-		"Bar": &types.AttributeValueMemberS{Value: i.Bar},
-	}
-}
-
 func (i *TestItem) String() string {
 	return fmt.Sprintf("Id: %v, Bar: %v", i.Id, i.Bar)
 }

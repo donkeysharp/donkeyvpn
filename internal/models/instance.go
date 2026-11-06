@@ -59,13 +59,6 @@ func (i VPNInstance) PrimaryKey() map[string]types.AttributeValue {
 	}
 }
 
-func (i VPNInstance) RangeKey() map[string]types.AttributeValue {
-	log.Infof("VPN Instance Range key: %v", i.Hostname)
-	return map[string]types.AttributeValue{
-		"Hostname": &types.AttributeValueMemberS{Value: i.Hostname},
-	}
-}
-
 func (i VPNInstance) UpdateExpression() (*expression.Expression, error) {
 	update := expression.Set(expression.Name("Hostname"), expression.Value(i.Hostname))
 	update.Set(expression.Name("Port"), expression.Value(i.Port))
