@@ -24,7 +24,7 @@ Here is a [Youtube demo I recorded](https://youtu.be/IPp3d39Z-Zc) on how to use 
 - [Local Development](docs/local-development.md)
 
 ## Roadmap
-- [ ] Make the changes accordingly to support testing, this is very important
+- [x] Make the changes accordingly to support testing, this is very important
 - [ ] Create missing documentation for Windows and MacOS
 - [x] Add an AWS cron job event to notify if there are instances that have been running for more than an hour.
 
